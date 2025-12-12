@@ -21,11 +21,11 @@ LazyVim template started with the following default configuration
 + `fd`
 + wezterm (Linux, Macos & Windows)
 
-```
-```
 ```shell
 scoop install fzf fd ripgrep tree-sitter git 
 ```
+
+`curl` will be automatically installed with git installation.
 
 ## Default Neovim Configuration directory
 
@@ -35,7 +35,8 @@ Default configuration directory location of Neovim on Windows system is
 ~\AppData\Local\nvim
 ```
 
-make this folder as symbolic link targetting `~\.config\nvim\` directory and manage the configuration in there via git.
+make this folder as symbolic link targetting `~\.config\nvim\` directory where the neovim configuration is managed via git.
+(optional) Create symbolic link for `~\AppData\Local\nvim-data\` too in the `~\.config\` directory for managing efficiency.
 
 ## Git Config Manamgement
 
@@ -44,5 +45,8 @@ Personal git repo location --> (git@github.com:jkkow/lazyvim.git)
 Clone this repo to `~\.config\nvim\` with the following command.
 
 ```shell
-git clone git@github.com:jkkow/lazyvim.git ~\.config\nvim
+git clone git@github.com:jkkow/lazyvim.git "$Home\.config\nvim"
 ```
+
+> [!CAUTION]
+> Never use tilda(`~`) sign for home directory representation in Powershell. This will create `~` directory.
