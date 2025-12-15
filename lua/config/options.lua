@@ -19,3 +19,9 @@ opt.scrolloff = 15
 -- Every wrapped line will continue visually indented (same amount of space as the beginning of that line), thus preserving horizontal blocks of text.
 opt.breakindent = true
 opt.autoindent = true
+
+-- Sync clipboard between OS and Neovim.
+-- vim.schedule let this setup runs after UiEnter.
+vim.schedule(function()
+  vim.opt.clipboard = "unnamedplus"
+end)
