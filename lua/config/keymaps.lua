@@ -4,6 +4,6 @@
 
 local map = vim.keymap.set
 
-map("i", "lkj", "<ESC>")
+map("i", "lk", "<ESC>")
 map("n", "<C-a>", "gg<S-v>G", { desc = "Select all" }) -- Selett all
 map("n", "x", '"_x') -- don't yank with x
