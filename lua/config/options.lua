@@ -14,6 +14,12 @@ opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
 opt.shellquote = ""
 opt.shellxquote = ""
 
+-- Indentation setup
+opt.expandtab = true -- Converts 'tab' into 'spaces' (must)
+opt.tabstop = 2 -- Show tab character as 2 spaces
+opt.shiftwidth = 2 -- Move 2 spaces when do auto indentation by '>>', etc
+opt.softtabstop = 2 -- Move 2 spaces when enter 'tab' or 'backspace' key
+
 -- Minimal number of screen lines to keep above and below the cursor.
 opt.scrolloff = 15
 
@@ -21,3 +27,9 @@ opt.scrolloff = 15
 -- Every wrapped line will continue visually indented (same amount of space as the beginning of that line), thus preserving horizontal blocks of text.
 opt.breakindent = true
 opt.autoindent = true
+
+-- Sync clipboard between OS and Neovim.
+-- vim.schedule let this setup rusn after UiEnter.
+vim.schedule(function()
+  vim.opt.clipboard = "unnamedplus"
+end)
