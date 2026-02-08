@@ -12,11 +12,11 @@ LazyVim template started with the following default configuration
 
 + Neovim >= 0.11.2 (needs to be built with LuaJIT)
 + Git >= 2.19.0 (for partial clones support)
-  - `curl` for blink.cmp (completion engine)
+  + `curl` for blink.cmp (completion engine)
 + Nerd Font(v3.0 or greater) (optional, but needed to display some icons)
 + `tree-sitter-cli` and a C compiler for nvim-treesitter.
 + `fzf`: fzf (v0.25.1 or greater)
-+ `ripgrep` 
++ `ripgrep`
 + `fd`
 + wezterm (Linux, Macos & Windows)
 
@@ -40,7 +40,7 @@ Default configuration directory location of Neovim on Windows system is
 
 ## Git Config Manamgement
 
-Personal git repo location --> (git@github.com:jkkow/lazyvim.git)
+Personal git repo location --> (<git@github.com>:jkkow/lazyvim.git)
 Clone this repo to `~\.config\nvim\` with the following command.
 
 ```shell

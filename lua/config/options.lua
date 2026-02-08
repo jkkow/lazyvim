@@ -14,6 +14,12 @@ opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
 opt.shellquote = ""
 opt.shellxquote = ""
 
+-- Indentation setup
+opt.expandtab = true -- Converts 'tab' into 'spaces' (must)
+opt.tabstop = 2 -- Show tab character as 2 spaces
+opt.shiftwidth = 2 -- Move 2 spaces when do auto indentation by '>>', etc
+opt.softtabstop = 2 -- Move 2 spaces when enter 'tab' or 'backspace' key
+
 -- Minimal number of screen lines to keep above and below the cursor.
 opt.scrolloff = 15
 
