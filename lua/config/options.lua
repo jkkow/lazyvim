@@ -1,35 +1,46 @@
--- Options are automatically loaded before lazy.nvim startup
--- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
--- Add any additional options here
-
 local opt = vim.opt
 
-------------------------------------------------------------------------------
---- to make nvimterminal looks same with my powershell setup
-opt.shell = "pwsh"
-opt.shellcmdflag =
-  "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;"
-opt.shellredir = "-RedirectStandardOutput %s -NoNewWindow -Wait"
-opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
+-- 1. Shell Setup
+-- Set the shell to bash to ensure consistency in the WSL environment
+opt.shell = "/bin/bash"
+opt.shellcmdflag = "-c"
 opt.shellquote = ""
 opt.shellxquote = ""
 
--- Indentation setup
-opt.expandtab = true -- Converts 'tab' into 'spaces' (must)
-opt.tabstop = 2 -- Show tab character as 2 spaces
-opt.shiftwidth = 2 -- Move 2 spaces when do auto indentation by '>>', etc
-opt.softtabstop = 2 -- Move 2 spaces when enter 'tab' or 'backspace' key
+-- Configure shell redirection and piping for external commands
+opt.shellredir = ">%s 2>&1"
+opt.shellpipe = "2>%1 | tee"
 
--- Minimal number of screen lines to keep above and below the cursor.
+-- 2. Indentation Setup
+opt.expandtab = true   -- Convert tabs to spaces
+opt.tabstop = 2        -- Insert 2 spaces for a tab
+opt.shiftwidth = 2     -- Number of spaces to use for each step of (auto)indent
+opt.softtabstop = 2    -- Number of spaces that a <Tab> counts for while editing
+opt.autoindent = true  -- Copy indent from current line when starting a new one
+opt.breakindent = true -- Preserve indentation in wrapped text
+
+-- 3. UI/UX Setup
+-- Keep minimal number of screen lines above and below the cursor
 opt.scrolloff = 15
 
--- Enable break indent
--- Every wrapped line will continue visually indented (same amount of space as the beginning of that line), thus preserving horizontal blocks of text.
-opt.breakindent = true
-opt.autoindent = true
+-- 4. WSL Clipboard Setup
+-- Configure clipboard to use Windows system clipboard (clip.exe) in WSL.
+-- This resolves issues with xclip crashing or freezing.
+if vim.fn.has("wsl") == 1 then
+  vim.g.clipboard = {
+    name = "WslClipboard",
+    copy = {
+      ["+"] = "clip.exe",
+      ["*"] = "clip.exe",
+    },
+    paste = {
+      -- Use PowerShell to get clipboard content and remove Carriage Return (`\r`) characters
+      ["+"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+      ["*"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+    },
+    cache_enabled = 0,
+  }
+end
 
--- Sync clipboard between OS and Neovim.
--- vim.schedule let this setup rusn after UiEnter.
-vim.schedule(function()
-  vim.opt.clipboard = "unnamedplus"
-end)
+-- Sync with system clipboard
+opt.clipboard = "unnamedplus" -- need xclip when Linux environment
