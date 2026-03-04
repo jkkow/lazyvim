@@ -1,6 +1,5 @@
 {
-"extras": [
-    "lazyvim.plugins.extras.colorscheme.kanagawa",
+  "extras": [
     "lazyvim.plugins.extras.dap.core",
     "lazyvim.plugins.extras.lang.json",
     "lazyvim.plugins.extras.lang.markdown",
