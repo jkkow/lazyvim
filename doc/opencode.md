@@ -194,7 +194,7 @@ end, { desc = "Add motion range to opencode", expr = true })
 
 ---
 
-`go` - Operator Mode (Add Motion to OpenCode)
+#### `go` - Operator Mode (Add Motion to OpenCode)
 
 | Attribute | Value |
 |-----------|-------|
