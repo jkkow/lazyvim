@@ -67,3 +67,9 @@ end
 
 -- Sync clipboard between OS and Neovim (Applies to all)
 opt.clipboard = "unnamedplus"
+
+------------------------------------------------------------------------------
+-- 3. Display Settings (Wrap & Linebreak)
+------------------------------------------------------------------------------
+opt.wrap = true -- Wrap long lines
+opt.linebreak = true -- Wrap at word boundaries
