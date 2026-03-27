@@ -21,3 +21,6 @@ end, { desc = "Go to previous diagnostic" })
 map("n", "]d", function()
   vim.diagnostic.jump({ count = 1 })
 end, { desc = "Go to next diagnostic" })
+
+-- Open diagnostic location list
+map("n", "gL", vim.diagnostic.setloclist, { desc = "Open diagnostic location list" })
