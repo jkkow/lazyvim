@@ -6,7 +6,7 @@ local opt = vim.opt
 
 ------------------------------------------------------------------------------
 -- 1. Common Settings (Indentation & UI)
--- These settings apply to all environments (WSL, Windows, Linux)
+-- These settings apply to the Omarchy (Arch Linux) environment
 ------------------------------------------------------------------------------
 
 -- Indentation Setup
@@ -24,48 +24,8 @@ opt.scrolloff = 15 -- Keep minimal number of screen lines above and below the cu
 -- 2. Environment Specific Setup (Shell & Clipboard)
 ------------------------------------------------------------------------------
 
-if vim.fn.has("wsl") == 1 then
-  -- [ Case A: WSL Environment ]
-  -- Use /bin/bash as the default shell
-  opt.shell = "/bin/bash"
-  opt.shellcmdflag = "-c"
-  opt.shellquote = ""
-  opt.shellxquote = ""
-  opt.shellredir = ">%s 2>&1"
-  opt.shellpipe = "2>%1 | tee"
-
-  -- WSL Clipboard Fix: Force use of Windows clip.exe to prevent xclip crashes
-  vim.g.clipboard = {
-    name = "WslClipboard",
-    copy = {
-      ["+"] = "clip.exe",
-      ["*"] = "clip.exe",
-    },
-    paste = {
-      ["+"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
-      ["*"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
-    },
-    cache_enabled = 0,
-  }
-elseif vim.fn.has("win32") == 1 then
-  -- [ Case B: Native Windows Environment ]
-  -- Use PowerShell Core (pwsh) as the default shell
-  opt.shell = "pwsh"
-
-  -- PowerShell flags for correct encoding (UTF-8) and execution
-  opt.shellcmdflag =
-    "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;"
-  opt.shellredir = "-RedirectStandardOutput %s -NoNewWindow -Wait"
-  opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
-  opt.shellquote = ""
-  opt.shellxquote = ""
-else
-  -- [ Case C: Pure Linux / macOS ]
-  -- Default shell settings (usually bash or zsh)
-  -- If you need specific settings for Mac, add them here.
-end
-
 -- Sync clipboard between OS and Neovim (Applies to all)
+-- Ensure 'wl-clipboard' (Wayland) or 'xclip'/'xsel' (X11) is installed on Arch Linux
 opt.clipboard = "unnamedplus"
 
 ------------------------------------------------------------------------------
