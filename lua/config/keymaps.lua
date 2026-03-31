@@ -7,3 +7,20 @@ local map = vim.keymap.set
 map("i", "lk", "<ESC>")
 map("n", "<C-a>", "gg<S-v>G", { desc = "Select all" }) -- Selett all
 map("n", "x", '"_x') -- don't yank with x
+
+------------------------------------------------------------------------------
+-- Diagnostic (LSP Error/Warning) Settings
+------------------------------------------------------------------------------
+-- Show diagnostics in floating window using 'gl'
+map("n", "gl", vim.diagnostic.open_float, { desc = "Show diagnostics in floating window" })
+
+-- Navigate between diagnostics
+map("n", "[d", function()
+  vim.diagnostic.jump({ count = -1 })
+end, { desc = "Go to previous diagnostic" })
+map("n", "]d", function()
+  vim.diagnostic.jump({ count = 1 })
+end, { desc = "Go to next diagnostic" })
+
+-- Open diagnostic location list
+map("n", "gL", vim.diagnostic.setloclist, { desc = "Open diagnostic location list" })
