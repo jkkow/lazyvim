@@ -7,7 +7,8 @@ local map = vim.keymap.set
 map("i", "lk", "<ESC>")
 map("n", "<C-a>", "gg<S-v>G", { desc = "Select all" }) -- Selett all
 map("n", "x", '"_x') -- don't yank with x
-
+map("t", "lk", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+map("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 ------------------------------------------------------------------------------
 -- Diagnostic (LSP Error/Warning) Settings
 ------------------------------------------------------------------------------
