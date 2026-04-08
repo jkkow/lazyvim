@@ -1,103 +1,91 @@
-# 💤 LazyVim for Omarchy (Arch Linux)
+# 💤 LazyVim for Ubuntu Linux
 
-This is a personal Neovim configuration based on the [LazyVim](https://github.com/LazyVim/LazyVim) starter template, tailored specifically for **Omarchy** (an Arch Linux environment).
+This is a personal Neovim configuration based on the [LazyVim](https://github.com/LazyVim/LazyVim) starter template, tuned for Ubuntu desktop and laptop workflows.
 
 LazyVim is built with:
 
 + [LazyVim Default Options](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua)
 + [LazyVim Default Keymaps](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua)
 
-## 📦 Prerequisites
+## Prerequisites
 
-To ensure all plugins and language servers work correctly on Arch Linux, you need to install the following dependencies.
-
-### 1. Core Packages
-
-You will need Neovim, Git, a C compiler (for `nvim-treesitter`), and essential CLI search tools:
+Install the core tools required by this setup:
 
 ```bash
-sudo pacman -S neovim git curl fzf ripgrep fd gcc make unzip
+sudo apt update
+sudo apt install -y neovim git curl fzf ripgrep fd-find build-essential unzip xclip wl-clipboard
 ```
 
-> **Note**: This setup assumes **Neovim >= 0.11.2** (built with LuaJIT). If the stable `pacman` repository provides an older version, you may need to install `neovim-git` from the AUR using your preferred helper (e.g., `yay` or `paru`).
+Notes:
 
-### 2. Nerd Fonts
-
-A Nerd Font is highly recommended to correctly display icons in the UI (like NvimTree, lualine, and blink.cmp).
+- This config expects Neovim 0.11+.
+- On Ubuntu, `fd-find` installs the `fdfind` binary. Some tools expect `fd`, so add a symlink if needed:
 
 ```bash
-# Example: Install JetBrains Mono Nerd Font and general Nerd Font symbols
-sudo pacman -S ttf-nerd-fonts-symbols ttf-jetbrains-mono-nerd
+mkdir -p ~/.local/bin
+ln -sf "$(command -v fdfind)" ~/.local/bin/fd
 ```
 
-### 3. Terminal Emulator
+## Nerd Font
 
-This configuration works beautifully with modern GPU-accelerated terminal emulators commonly used in Omarchy, such as **WezTerm**, **Kitty**, or **Alacritty**.
+A Nerd Font is recommended so icons render correctly in UI components (statusline, picker, completion, etc.).
 
----
-
-## 🚀 Installation & Setup
-
-If you have used Neovim previously, it is crucial to back up your old configuration and clear the cache/data folders before proceeding to prevent conflicts.
-
-### 1. Backup Existing Config
+Quick option:
 
 ```bash
-# Backup current configuration
+sudo apt install -y fonts-jetbrains-mono
+```
+
+For full Nerd Font icon coverage, install a Nerd Font release from [nerdfonts.com](https://www.nerdfonts.com/font-downloads) and select it in your terminal.
+
+## Installation
+
+If you already use Neovim, back up existing config and state first:
+
+```bash
 mv ~/.config/nvim ~/.config/nvim.bak
-
-# Backup Neovim data, state, and cache
 mv ~/.local/share/nvim ~/.local/share/nvim.bak
 mv ~/.local/state/nvim ~/.local/state/nvim.bak
 mv ~/.cache/nvim ~/.cache/nvim.bak
 ```
 
-### 2. Clone the Repository
-
-Clone this repository directly into your Neovim configuration directory (`~/.config/nvim`).
-
-**Using SSH (Recommended):**
+Clone this repository:
 
 ```bash
 git clone git@github.com:jkkow/lazyvim.git ~/.config/nvim
 ```
 
-**Using HTTPS:**
+Or with HTTPS:
 
 ```bash
 git clone https://github.com/jkkow/lazyvim.git ~/.config/nvim
 ```
 
-### 3. Start Neovim
-
-Open your terminal and launch Neovim:
+Start Neovim:
 
 ```bash
 nvim
 ```
 
-Upon the first startup, the `lazy.nvim` package manager will automatically download itself and install all the configured plugins. Please wait for the initial installation UI to finish.
+On first launch, `lazy.nvim` bootstraps itself and installs plugins.
 
-### 4. Verify the Installation
+## Verification
 
-Once the plugins are successfully installed, run the following command inside Neovim to ensure your environment is fully ready and to check for any missing system dependencies:
+Run this inside Neovim after initial plugin install:
 
 ```vim
 :checkhealth
 ```
 
-Pay attention to any `ERROR` or `WARNING` messages, especially under the `nvim-treesitter` or `mason` sections, and install any additionally requested packages.
+If anything is missing, install the reported dependency and restart Neovim.
 
----
+## Linux Directory Layout (XDG)
 
-## 📁 Linux Directory Structure (XDG)
+Neovim follows XDG directories by default on Ubuntu/Linux:
 
-Unlike Windows, Neovim on Omarchy (Linux) strictly follows the XDG Base Directory specification. You do not need to manually configure symbolic links.
++ Config: `~/.config/nvim/`
++ Data: `~/.local/share/nvim/`
++ State: `~/.local/state/nvim/`
++ Cache: `~/.cache/nvim/`
 
-Neovim automatically uses these directories natively:
-+ **Configuration (`$XDG_CONFIG_HOME`):** `~/.config/nvim/` (Where this git repository lives)
-+ **Data (`$XDG_DATA_HOME`):** `~/.local/share/nvim/` (Plugins, downloaded LSPs via Mason)
-+ **State (`$XDG_STATE_HOME`):** `~/.local/state/nvim/` (Log files, undo history)
-+ **Cache (`$XDG_CACHE_HOME`):** `~/.cache/nvim/`
-
-You can safely delete `.local/share/nvim`, `.local/state/nvim`, or `.cache/nvim` at any time if you experience weird UI glitches or plugin issues; Neovim will regenerate them upon the next launch.
+If your setup becomes unstable, removing data/state/cache directories is usually safe; Neovim recreates them on next start.

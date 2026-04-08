@@ -6,7 +6,7 @@ local opt = vim.opt
 
 ------------------------------------------------------------------------------
 -- 1. Common Settings (Indentation & UI)
--- These settings apply to the Omarchy (Arch Linux) environment
+-- These settings are distro-agnostic and work on Ubuntu/Linux
 ------------------------------------------------------------------------------
 
 -- Indentation Setup
@@ -25,7 +25,7 @@ opt.scrolloff = 15 -- Keep minimal number of screen lines above and below the cu
 ------------------------------------------------------------------------------
 
 -- Sync clipboard between OS and Neovim (Applies to all)
--- Ensure 'wl-clipboard' (Wayland) or 'xclip'/'xsel' (X11) is installed on Arch Linux
+-- Ensure 'wl-clipboard' (Wayland) or 'xclip'/'xsel' (X11) is installed on Ubuntu
 opt.clipboard = "unnamedplus"
 
 ------------------------------------------------------------------------------

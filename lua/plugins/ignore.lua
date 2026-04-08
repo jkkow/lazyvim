@@ -1,2 +1,2 @@
--- Dummy file to avoide starting error if there's no files in plugin folder
+-- Dummy file to avoid startup errors if plugins folder is empty
 return {}
