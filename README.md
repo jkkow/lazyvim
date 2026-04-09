@@ -18,8 +18,8 @@ sudo apt install -y neovim git curl fzf ripgrep fd-find build-essential unzip xc
 
 Notes:
 
-- This config expects Neovim 0.11+.
-- On Ubuntu, `fd-find` installs the `fdfind` binary. Some tools expect `fd`, so add a symlink if needed:
++ This config expects Neovim 0.11+.
++ On Ubuntu, `fd-find` installs the `fdfind` binary. Some tools expect `fd`, so add a symlink if needed:
 
 ```bash
 mkdir -p ~/.local/bin
