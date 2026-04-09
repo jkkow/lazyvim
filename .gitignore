@@ -5,3 +5,10 @@ debug
 *.log
 data
 lazy-lock.json
+
+# Installer local artifacts
+install/.cache/
+install/.tmp/
+install/.artifacts/
+install/*.log
+install/*.tmp

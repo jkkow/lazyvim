@@ -53,6 +53,18 @@ For full Nerd Font icon coverage, install a Nerd Font release from [nerdfonts.co
 
 ## Installation
 
+Run the installer from the repo root:
+
+```bash
+bash install/install.sh
+```
+
+To install only the required packages:
+
+```bash
+bash install/install.sh --base-only
+```
+
 If you already use Neovim, back up existing config and state first:
 
 ```bash
