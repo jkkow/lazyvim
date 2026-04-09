@@ -6,7 +6,8 @@ source "$script_dir/../../lib/common.sh"
 source "$script_dir/../../lib/tool_versions.sh"
 source "$script_dir/../../lib/version.sh"
 install_dir="/opt/nvim-linux64"
-download_url="https://github.com/neovim/neovim/releases/download/v${NEOVIM_FALLBACK_VERSION}/nvim-linux64.tar.gz"
+fallback_version="$(normalize_version "$NEOVIM_FALLBACK_VERSION")"
+download_url="https://github.com/neovim/neovim/releases/download/v${fallback_version}/nvim-linux64.tar.gz"
 
 current_nvim_version() {
   if ! command_exists nvim; then
@@ -29,7 +30,7 @@ main() {
   archive_path="$tmp_dir/nvim-linux64.tar.gz"
   trap "rm -rf \"$tmp_dir\"" EXIT
 
-  log_info "Downloading Neovim v$NEOVIM_FALLBACK_VERSION"
+  log_info "Downloading Neovim v$fallback_version"
   curl -fsSL "$download_url" -o "$archive_path"
 
   sudo rm -rf "$install_dir"
