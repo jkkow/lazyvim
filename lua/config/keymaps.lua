@@ -24,3 +24,19 @@ end, { desc = "Go to next diagnostic" })
 
 -- Open diagnostic location list
 map("n", "gL", vim.diagnostic.setloclist, { desc = "Open diagnostic location list" })
+
+-- lua/config/keymaps.lua
+if vim.env.SSH_TTY then
+  vim.keymap.set({ "n", "v" }, "<leader>y", function()
+    -- Bring activated register contents
+    local lines = vim.fn.getreg(vim.v.register)
+
+    if lines ~= "" then
+      -- Transform refined contents to local terminal through OSC 52
+      require("vim.ui.clipboard.osc52").copy("+")(vim.fn.split(lines, "\n"), "v")
+      print("Copied to local clipboard!")
+    else
+      print("Nothing to copy!")
+    end
+  end, { desc = "Copy to Local (OSC 52)" })
+end
