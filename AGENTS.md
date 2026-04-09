@@ -11,12 +11,15 @@ All source code is written in Lua. Please adhere to the following guidelines and
 Because this is a Neovim configuration, there is no traditional "build" step. However, maintaining code quality through formatting, linting, and testing (if applicable) is critical.
 
 ### 1.1 Formatting
+
 We enforce formatting using `stylua`. The configuration is defined in the root `stylua.toml` file.
+
 - **Indent Type:** Spaces
 - **Indent Width:** 2
 - **Column Width:** 120
 
 **Commands:**
+
 - **Check formatting (dry run):**
   `stylua --check lua/`
 - **Format a single file:**
@@ -25,10 +28,12 @@ We enforce formatting using `stylua`. The configuration is defined in the root `
   `stylua lua/`
 
 ### 1.2 Linting
+
 We rely on Neovim's LSP (`lua_ls`) for real-time diagnostics.
 If you need to verify code statically via terminal, use `luacheck` (if installed globally).
 
 **Commands:**
+
 - **Run Luacheck on a single file:**
   `luacheck <absolute_path_to_lua_file>`
 - **Run Luacheck on the entire project:**
@@ -37,9 +42,11 @@ If you need to verify code statically via terminal, use `luacheck` (if installed
 *Note: The global `vim` is always available and should be ignored by linters. Be cautious not to introduce global leaks (`_G`).*
 
 ### 1.3 Testing
+
 Standard Neovim configurations do not strictly require a test suite. However, if working on complex custom Lua modules, `plenary.nvim`'s `busted` framework may be used.
 
 **Commands:**
+
 - **Run all tests (headless mode):**
   `nvim --headless -c "PlenaryBustedDirectory tests/ { minimal_init = 'tests/minimal_init.lua' }"`
 - **Run a single test file (headless mode):**
@@ -48,6 +55,7 @@ Standard Neovim configurations do not strictly require a test suite. However, if
 *(Agent Note: Only attempt to run these test commands if you have verified that a `tests/` or `spec/` directory exists with valid `_spec.lua` files.)*
 
 ### 1.4 Applying Changes
+
 Changes to Lua files generally take effect when Neovim is restarted.
 For hot-reloading specific modules during active development inside Neovim, the following Lua snippet can be used:
 `package.loaded["module.name"] = nil; require("module.name")`
@@ -59,16 +67,20 @@ For hot-reloading specific modules during active development inside Neovim, the 
 To maintain a clean and idiomatic codebase, follow these rules strictly.
 
 ### 2.1 File Structure and Imports
+
 - **LazyVim Standard:** All plugin specifications must reside in `lua/plugins/`. Avoid clashing with LazyVim defaults unless explicitly intending to override them.
 - **Core Config:** Core settings belong in `lua/config/` (e.g., `options.lua`, `keymaps.lua`, `autocmds.lua`).
-- **Imports (`require`):** 
+- **Imports (`require`):**
   - For standard module imports, use standard `require("module_name")`.
   - If a module might not be present (e.g., an optional dependency), use `pcall`:
+
     ```lua
     local status_ok, module = pcall(require, "module_name")
     if not status_ok then return end
     ```
+
   - For LazyVim plugin specs, return a Lua table directly:
+
     ```lua
     return {
       "author/plugin-name",
@@ -79,6 +91,7 @@ To maintain a clean and idiomatic codebase, follow these rules strictly.
     ```
 
 ### 2.2 Formatting and Syntax
+
 - **Indentation:** Exactly 2 spaces. No tabs.
 - **Line Length:** Maximum 120 characters per line.
 - **Quotes:** Prefer double quotes (`"`) for standard strings. Use single quotes (`'`) only if it helps avoid escaping double quotes within the string.
@@ -86,10 +99,12 @@ To maintain a clean and idiomatic codebase, follow these rules strictly.
 - **Tables:** Always include trailing commas in multi-line tables. This produces much cleaner Git diffs.
 
 ### 2.3 Typing and Annotations
+
 We heavily utilize EmmyLua / LCATS annotations to provide context for `lua_ls` (Lua Language Server).
 Always annotate function signatures, especially for complex utilities.
 
 **Example:**
+
 ```lua
 ---@class UserOptions
 ---@field name string The display name
@@ -105,17 +120,20 @@ end
 ```
 
 ### 2.4 Naming Conventions
+
 - **Variables and Functions:** `snake_case` (e.g., `local current_buffer`, `local function get_word()`).
 - **Constants:** `UPPER_SNAKE_CASE` (e.g., `local MAX_FILE_SIZE = 1024`).
 - **Modules and Classes:** `PascalCase` if acting as an object-oriented class or metatable (e.g., `local MyClass = {}`).
 - **Private/Internal Members:** Prefix with an underscore `_` to denote that a variable or function is not meant to be accessed outside its scope (e.g., `local _internal_cache = {}`).
 
 ### 2.5 Error Handling
+
 - Never allow an unhandled error to crash the user's Neovim session.
 - Use `vim.notify` to surface errors to the user gracefully.
 - Wrap risky operations (e.g., file system reads, external commands) in `pcall`.
 
 **Example:**
+
 ```lua
 local ok, result = pcall(function()
   return vim.fn.readfile("some_file.txt")
@@ -126,15 +144,20 @@ if not ok then
   return nil
 end
 ```
+
 - Only use `error("Message")` for assertions where the module fundamentally cannot load without fulfilling a condition.
 
 ### 2.6 Neovim-Specific Practices
+
 - **No Global Leaks:** Do not use `_G` unless absolutely necessary. Always prefix variables with `local`.
 - **Keymaps:** Define mappings using `vim.keymap.set()`. Always provide a `desc` string in the options table so that plugins like `which-key.nvim` can pick them up.
+
   ```lua
   vim.keymap.set("n", "<leader>cx", vim.lsp.buf.rename, { desc = "Rename Symbol" })
   ```
+
 - **Autocmds:** Always place `autocmd`s inside an `augroup` using `clear = true`. This prevents duplicate events if the configuration is sourced multiple times.
+
   ```lua
   local my_group = vim.api.nvim_create_augroup("MyCustomGroup", { clear = true })
   vim.api.nvim_create_autocmd("FileType", {
@@ -145,6 +168,7 @@ end
     end,
   })
   ```
+
 - **Lazy.nvim Config:** Prefer using the `opts` table over the `config` function. Lazy automatically calls `require("plugin").setup(opts)`. Only use `config = function(_, opts)` if you need to run custom logic before or after setup.
 
 ---

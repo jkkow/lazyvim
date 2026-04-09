@@ -9,12 +9,23 @@ LazyVim is built with:
 
 ## Prerequisites
 
-Install the core tools required by this setup:
+Install the packages this setup needs but Ubuntu does not always ship by default:
 
 ```bash
 sudo apt update
-sudo apt install -y neovim git curl fzf ripgrep fd-find build-essential unzip xclip wl-clipboard
+sudo apt install -y neovim git curl fzf ripgrep fd-find build-essential unzip wl-clipboard
 ```
+
+Optional packages:
+
+```bash
+sudo apt install -y python
+sudo apt install -y python3-venv
+sudo apt install -y xclip
+sudo apt install -y xsel
+```
+
++ On Ubuntu, `python` and `python3-venv` are separate packages, so install both if you want Python support and virtual environments. These are required for managing linter and formatter tool via Mason.
 
 Notes:
 
@@ -25,6 +36,8 @@ Notes:
 mkdir -p ~/.local/bin
 ln -sf "$(command -v fdfind)" ~/.local/bin/fd
 ```
+
++ For X11 clipboard integration, install `xclip` or `xsel`. On Wayland, `wl-clipboard` is enough.
 
 ## Nerd Font
 
