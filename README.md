@@ -59,6 +59,8 @@ Run the installer from the repo root:
 bash install/install.sh
 ```
 
+For installer internals, structure, and maintenance workflow, see `install/INSTALLATION.md`.
+
 To install only the required packages:
 
 ```bash

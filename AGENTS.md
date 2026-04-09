@@ -2,7 +2,8 @@
 
 Welcome, Agent. This repository contains a Neovim configuration built on top of the LazyVim framework.
 Your primary role is to assist with modifying, refactoring, and adding new features to this Neovim setup.
-All source code is written in Lua. Please adhere to the following guidelines and instructions to ensure consistency and stability.
+Most editor configuration source code is written in Lua, and the installer subsystem is written in Bash.
+Please adhere to the following guidelines and instructions to ensure consistency and stability.
 
 ---
 
@@ -59,6 +60,26 @@ Standard Neovim configurations do not strictly require a test suite. However, if
 Changes to Lua files generally take effect when Neovim is restarted.
 For hot-reloading specific modules during active development inside Neovim, the following Lua snippet can be used:
 `package.loaded["module.name"] = nil; require("module.name")`
+
+### 1.5 Installer Script Validation (Bash)
+
+Installer orchestration and package installers live under `install/` and are Bash scripts.
+
+**Commands:**
+
+- **Syntax-check installer scripts:**
+  `bash -n install/install.sh`
+- **Syntax-check all installer script paths from manifests (recommended):**
+  `while read -r f; do bash -n "install/$f"; done < install/manifests/base.txt`
+- **Optional static analysis (if installed):**
+  `shellcheck install/install.sh install/lib/*.sh install/installers/apt/*.sh install/installers/fallback/*.sh install/post/*.sh`
+
+Installer policy reminders:
+
+- Keep installer behavior **Ubuntu-only** unless explicitly requested otherwise.
+- Keep version pins centralized in `install/lib/tool_versions.sh`.
+- Preserve sectioned/progress output conventions in `install/install.sh`.
+- When changing installer flow/structure, keep `install/INSTALLATION.md` and `README.md` installation references in sync.
 
 ---
 
@@ -171,12 +192,22 @@ end
 
 - **Lazy.nvim Config:** Prefer using the `opts` table over the `config` function. Lazy automatically calls `require("plugin").setup(opts)`. Only use `config = function(_, opts)` if you need to run custom logic before or after setup.
 
+### 2.7 Installer Script Style (Bash)
+
+- Use `#!/usr/bin/env bash` and `set -euo pipefail` in installer scripts.
+- Source shared helpers from `install/lib/common.sh` and `install/lib/tool_versions.sh` when needed.
+- Keep scripts idempotent: check first, then install only when needed.
+- Prefer `log_info`, `log_warn`, `log_error`, and `log_section` for output consistency.
+- Use small, focused scripts (one tool/concern per installer file) and compose via manifests.
+- Preserve `post/` fixups for symlink/version verification where applicable.
+
 ---
 
 ## 3. Tool Rules & Compatibility
 
-- **Context First:** Before proposing or making any changes, use `glob` and `read` to explore `lua/plugins/` to understand existing configurations.
+- **Context First:** Before proposing or making any changes, use `glob` and `read` to explore the relevant area (`lua/plugins/`, `lua/config/`, or `install/`) to understand existing configurations.
 - **Absolute Paths:** When using file system tools, always compute the absolute path by prepending `/home/jkko/.config/nvim/`.
 - **No Interactive Bash:** Avoid commands like `nvim` or `git commit -i` that prompt the user or launch TUI applications.
 - **LazyVim Upgrades:** Do not try to manually update LazyVim core files. Stick to the designated `lua/plugins/` and `lua/config/` user directories.
+- **Installer Scope:** Do not move installer logic into LazyVim core or distro-agnostic abstractions unless explicitly requested; keep installer changes in `install/`.
 - **Cursor/Copilot Constraints:** If you find `.cursorrules` or `.github/copilot-instructions.md` in the future, adhere to them alongside these instructions (none exist currently for this repository).
