@@ -87,7 +87,7 @@ print_installation_summary() {
   local fzf_version=""
   fzf_version="$(command_version_line fzf fzf --version | awk '{print $1}' || true)"
   [[ -z "$fzf_version" ]] && fzf_version="not found"
-  print_summary_row "fzf" "-" "$fzf_version"
+  print_summary_row "fzf" "$FZF_REQUIRED_VERSION" "$fzf_version"
 
   local rg_version=""
   rg_version="$(command_version_line rg rg --version | awk '{print $2}' || true)"

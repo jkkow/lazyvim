@@ -22,13 +22,13 @@ main() {
     exit 0
   fi
 
-  if [[ ! -x /opt/nvim-linux64/bin/nvim ]]; then
-    log_error "Fallback Neovim binary not found in /opt/nvim-linux64/bin/nvim"
+  if [[ ! -x /opt/nvim-linux-x86_64/bin/nvim ]]; then
+    log_error "Fallback Neovim binary not found in /opt/nvim-linux-x86_64/bin/nvim"
     exit 1
   fi
 
   sudo install -d /usr/local/bin
-  sudo ln -sfn /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+  sudo ln -sfn /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
 
   if ! command_exists nvim; then
     log_error "nvim still not available after installation"
