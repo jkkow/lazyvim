@@ -6,7 +6,7 @@ return {
     priority = 1000,
     config = function()
       local colorscheme_module = "plugins.colorscheme"
-      local transparency_file = vim.fn.stdpath("config") .. "/plugin/after/transparency.lua"
+      local transparency_file = vim.fs.joinpath(vim.fn.stdpath("config"), "plugin", "after", "transparency.lua")
 
       vim.api.nvim_create_autocmd("User", {
         pattern = "LazyReload",

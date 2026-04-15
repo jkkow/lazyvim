@@ -1,118 +1,98 @@
-# 💤 LazyVim for Ubuntu Linux
+# LazyVim for Windows 11
 
-This is a personal Neovim configuration based on the [LazyVim](https://github.com/LazyVim/LazyVim) starter template, tuned for Ubuntu desktop and laptop workflows.
+This is a personal Neovim configuration based on the [LazyVim](https://github.com/LazyVim/LazyVim) starter template, tuned for Windows 11 workflows.
 
-LazyVim is built with:
+LazyVim defaults used in this repo:
 
-+ [LazyVim Default Options](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua)
-+ [LazyVim Default Keymaps](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua)
+- [LazyVim Default Options](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua)
+- [LazyVim Default Keymaps](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua)
 
-## Prerequisites
+## Prerequisites (Windows 11)
 
-Install the packages this setup needs but Ubuntu does not always ship by default:
+Install core tools with `winget` (PowerShell):
 
-```bash
-sudo apt update
-sudo apt install -y neovim git curl fzf ripgrep fd-find build-essential unzip wl-clipboard
+```powershell
+winget install --id Neovim.Neovim -e
+winget install --id Git.Git -e
+winget install --id BurntSushi.ripgrep.MSVC -e
+winget install --id sharkdp.fd -e
+winget install --id junegunn.fzf -e
 ```
 
-Optional packages:
+Optional:
 
-```bash
-sudo apt install -y python
-sudo apt install -y python3-venv
-sudo apt install -y xclip
-sudo apt install -y xsel
+```powershell
+winget install --id Python.Python.3.12 -e
 ```
 
-+ On Ubuntu, `python` and `python3-venv` are separate packages, so install both if you want Python support and virtual environments. These are required for managing linter and formatter tool via Mason.
+When you run `install/install.ps1 -All`, the installer also adds JetBrainsMono Nerd Font for the current user.
 
 Notes:
 
-+ This config expects Neovim 0.11+.
-+ On Ubuntu, `fd-find` installs the `fdfind` binary. Some tools expect `fd`, so add a symlink if needed:
-
-```bash
-mkdir -p ~/.local/bin
-ln -sf "$(command -v fdfind)" ~/.local/bin/fd
-```
-
-+ For X11 clipboard integration, install `xclip` or `xsel`. On Wayland, `wl-clipboard` is enough.
+- This config expects Neovim 0.11+.
+- Neovim on Windows 11 uses the native clipboard provider.
 
 ## Nerd Font
 
-A Nerd Font is recommended so icons render correctly in UI components (statusline, picker, completion, etc.).
+A Nerd Font is recommended so icons render correctly in statusline, pickers, completion menus, and diagnostics.
 
-Quick option:
-
-```bash
-sudo apt install -y fonts-jetbrains-mono
-```
-
-For full Nerd Font icon coverage, install a Nerd Font release from [nerdfonts.com](https://www.nerdfonts.com/font-downloads) and select it in your terminal.
+- Install a Nerd Font from [nerdfonts.com](https://www.nerdfonts.com/font-downloads).
+- Set that font in your terminal profile (Windows Terminal, WezTerm, etc.).
 
 ## Installation
 
-Run the installer from the repo root:
+If you already use Neovim, back up your existing directories first:
 
-```bash
-bash install/install.sh
+```powershell
+Move-Item "$env:LOCALAPPDATA\nvim" "$env:LOCALAPPDATA\nvim.bak" -ErrorAction SilentlyContinue
+Move-Item "$env:LOCALAPPDATA\nvim-data" "$env:LOCALAPPDATA\nvim-data.bak" -ErrorAction SilentlyContinue
 ```
 
-For installer internals, structure, and maintenance workflow, see `install/INSTALLATION.md`.
+Clone this repository into `~/.config/nvim`:
 
-To install only the required packages:
-
-```bash
-bash install/install.sh --base-only
+```powershell
+git clone https://github.com/jkkow/lazyvim.git "$HOME\.config\nvim"
 ```
 
-If you already use Neovim, back up existing config and state first:
+Run the installer from the repository root:
 
-```bash
-mv ~/.config/nvim ~/.config/nvim.bak
-mv ~/.local/share/nvim ~/.local/share/nvim.bak
-mv ~/.local/state/nvim ~/.local/state/nvim.bak
-mv ~/.cache/nvim ~/.cache/nvim.bak
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All
 ```
 
-Clone this repository:
-
-```bash
-git clone git@github.com:jkkow/lazyvim.git ~/.config/nvim
-```
-
-Or with HTTPS:
-
-```bash
-git clone https://github.com/jkkow/lazyvim.git ~/.config/nvim
-```
+The installer links `%LOCALAPPDATA%\nvim` to `~/.config/nvim` automatically.
+For GUI Neovim clients (Neovide, nvim-qt), this repo sets `guifont` to `JetBrainsMono Nerd Font:h11`.
 
 Start Neovim:
 
-```bash
+```powershell
 nvim
 ```
 
-On first launch, `lazy.nvim` bootstraps itself and installs plugins.
+On first launch, `lazy.nvim` bootstraps and installs plugins automatically.
 
 ## Verification
 
-Run this inside Neovim after initial plugin install:
+Run inside Neovim after initial plugin install:
 
 ```vim
 :checkhealth
 ```
 
-If anything is missing, install the reported dependency and restart Neovim.
+Install any missing dependencies reported by health checks, then restart Neovim.
 
-## Linux Directory Layout (XDG)
+## Windows Directory Layout
 
-Neovim follows XDG directories by default on Ubuntu/Linux:
+Default Neovim locations on Windows 11:
 
-+ Config: `~/.config/nvim/`
-+ Data: `~/.local/share/nvim/`
-+ State: `~/.local/state/nvim/`
-+ Cache: `~/.cache/nvim/`
+- Config: `%LOCALAPPDATA%\nvim\`
+- Data: `%LOCALAPPDATA%\nvim-data\`
+- State: `%LOCALAPPDATA%\nvim-data\state\`
+- Cache: `%LOCALAPPDATA%\nvim-data\cache\`
 
-If your setup becomes unstable, removing data/state/cache directories is usually safe; Neovim recreates them on next start.
+If your setup becomes unstable, removing `nvim-data` is usually safe; Neovim recreates it on next launch.
+
+## Installer Scope
+
+`install/` is Windows-first and based on PowerShell + winget.
+Legacy Ubuntu scripts are available in `install/legacy/ubuntu/`.

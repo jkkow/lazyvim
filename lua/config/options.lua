@@ -6,7 +6,7 @@ local opt = vim.opt
 
 ------------------------------------------------------------------------------
 -- 1. Common Settings (Indentation & UI)
--- These settings are distro-agnostic and work on Ubuntu/Linux
+-- Baseline settings for Windows 11 Neovim usage
 ------------------------------------------------------------------------------
 
 -- Indentation Setup
@@ -24,8 +24,8 @@ opt.scrolloff = 15 -- Keep minimal number of screen lines above and below the cu
 -- 2. Environment Specific Setup (Shell & Clipboard)
 ------------------------------------------------------------------------------
 
--- Sync clipboard between OS and Neovim (Applies to all)
--- Ensure 'wl-clipboard' (Wayland) or 'xclip'/'xsel' (X11) is installed on Ubuntu
+-- Sync clipboard between Windows and Neovim
+-- On Windows 11, Neovim uses the native clipboard provider
 opt.clipboard = "unnamedplus"
 
 ------------------------------------------------------------------------------
@@ -33,3 +33,8 @@ opt.clipboard = "unnamedplus"
 ------------------------------------------------------------------------------
 opt.wrap = true -- Wrap long lines
 opt.linebreak = true -- Wrap at word boundaries
+
+-- GUI font for Windows Neovim clients (Neovide, nvim-qt, etc.)
+if vim.fn.has("win32") == 1 then
+  opt.guifont = "JetBrainsMono Nerd Font:h11"
+end

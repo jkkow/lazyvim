@@ -5,7 +5,7 @@
 local map = vim.keymap.set
 
 map("i", "lk", "<ESC>")
-map("n", "<C-a>", "gg<S-v>G", { desc = "Select all" }) -- Selett all
+map("n", "<C-a>", "gg<S-v>G", { desc = "Select all" })
 map("n", "x", '"_x') -- don't yank with x
 map("t", "lk", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 map("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
@@ -27,16 +27,20 @@ end, { desc = "Go to next diagnostic" })
 -- Open diagnostic location list
 map("n", "gL", vim.diagnostic.setloclist, { desc = "Open diagnostic location list" })
 
--- lua/config/keymaps.lua
 if vim.env.SSH_TTY then
   vim.keymap.set({ "n", "v" }, "<leader>y", function()
-    -- Bring activated register contents
+    -- Read contents from the active register
     local lines = vim.fn.getreg(vim.v.register)
 
     if lines ~= "" then
-      -- Transform refined contents to local terminal through OSC 52
-      require("vim.ui.clipboard.osc52").copy("+")(vim.fn.split(lines, "\n"), "v")
-      print("Copied to local clipboard!")
+      -- Send text through OSC 52 so remote SSH sessions can copy locally
+      local ok, osc52 = pcall(require, "vim.ui.clipboard.osc52")
+      if ok then
+        osc52.copy("+")(vim.fn.split(lines, "\n"), "v")
+        print("Copied to local clipboard!")
+      else
+        vim.notify("OSC52 clipboard provider is unavailable", vim.log.levels.WARN)
+      end
     else
       print("Nothing to copy!")
     end

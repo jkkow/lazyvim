@@ -1,157 +1,91 @@
-# Installer Guide
+# Windows Installer Guide
 
-This directory contains an Ubuntu-only installer for the Neovim environment in this repo.
+This directory contains the Windows 11 installer for this Neovim setup.
+
+Ubuntu scripts were moved to `install/legacy/ubuntu/`.
 
 ## What this installer does
 
-- Installs required tools listed in `install/manifests/base.txt`.
-- Optionally installs extra tools listed in `install/manifests/optional.txt`.
-- Uses apt-based installers in `install/installers/apt/`.
-- Falls back to a pinned Neovim tarball install when apt Neovim is too old.
-- Prints sectioned output and an installation summary with version/status info.
+- Installs required tools from `install/manifests/windows-base.txt`.
+- Optionally installs extra tools from `install/manifests/windows-optional.txt`.
+- Uses `winget` installers in `install/installers/winget/`.
+- Uses fallback download installers from `install/installers/fallback/` when version checks fail.
+- Runs Neovim post steps in `install/post/neovim.ps1`.
+- Creates `%LOCALAPPDATA%\nvim` as a link to `~/.config/nvim`.
+- Installs JetBrainsMono Nerd Font in optional mode.
 
 ## Usage
 
-Run from repository root:
+Run from the repository root in PowerShell:
 
-```bash
-bash install/install.sh --base-only
-bash install/install.sh --all
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -BaseOnly
+powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All
 ```
 
 Flags:
 
-- `--base-only`: install only required packages.
-- `--all`: install required + optional packages.
-- `-h`, `--help`: show help.
-
-Notes:
-
-- The script checks `/etc/os-release` and exits unless `ID=ubuntu`.
-- You will be prompted for sudo when needed.
+- `-BaseOnly`: install only required tools.
+- `-All`: install required and optional tools.
+- `-Help`: show help.
 
 ## Runtime flow
 
-`install/install.sh` runs these phases:
+`install/install.ps1` runs these phases:
 
-1. `PRIVILEGE CHECK` (`sudo -v`)
-2. `APT UPDATE` (`sudo apt-get update`)
-3. `BASE INSTALLATION` (scripts from `manifests/base.txt`)
-4. `OPTIONAL INSTALLATION` (scripts from `manifests/optional.txt`, unless `--base-only`)
-5. `INSTALLATION SUMMARY` (installed versions / availability)
+1. `BASE INSTALLATION`
+2. `OPTIONAL INSTALLATION` (unless `-BaseOnly`)
+3. `POST INSTALLATION`
+4. `INSTALLATION SUMMARY`
 
-Each manifest entry is executed sequentially and shown as:
+Manifest entries are executed sequentially and shown as:
 
 ```text
-[INFO] [3/9] Running installers/apt/fd.sh
+[INFO] [3/5] Running installers/winget/ripgrep.ps1
 ```
 
 ## Directory structure
 
 ```text
 install/
-  install.sh                 # Orchestrator
-  INSTALLATION.md            # This guide
+  install.ps1
+  INSTALLATION.md
   manifests/
-    base.txt                 # Required installers (one script path per line)
-    optional.txt             # Optional installers
+    windows-base.txt
+    windows-optional.txt
   installers/
-    apt/                     # Apt-backed installers
-    fallback/                # Non-apt fallback installers
-  post/                      # Post-install fixups/linking/verification
+    winget/
+      nerd-font.ps1
+    fallback/
+  post/
+    neovim.ps1
   lib/
-    common.sh                # Logging/helpers/apt wrapper
-    version.sh               # Version comparison helper
-    tool_versions.sh         # Central version pins
+    common.ps1
+    version.ps1
+    tool_versions.ps1
+  legacy/
+    ubuntu/
 ```
 
-## Version management
+## Post-install link behavior
 
-Version pins are centralized in `install/lib/tool_versions.sh`.
+After package installation, `install/post/neovim.ps1`:
 
-Current active pins:
+- checks source config at `~/.config/nvim`
+- backs up existing `%LOCALAPPDATA%\nvim` if needed
+- creates `%LOCALAPPDATA%\nvim` as a junction (or symbolic link fallback)
+- validates `init.lua` visibility through the link
+- validates Neovim startup with `nvim --headless "+qa"`
 
-- `NEOVIM_REQUIRED_VERSION`
-- `NEOVIM_FALLBACK_VERSION`
+## Font behavior
 
-How Neovim install works:
+- Optional install includes `install/installers/winget/nerd-font.ps1`.
+- Font files are installed to `%LOCALAPPDATA%\Microsoft\Windows\Fonts`.
+- Neovim GUI clients use `JetBrainsMono Nerd Font:h11` from `lua/config/options.lua`.
+- Terminal font (Windows Terminal/WezTerm) must be selected in terminal settings.
 
-- `install/installers/apt/neovim.sh` checks current `nvim` version.
-- If apt can satisfy the requirement, apt install/upgrade is used.
-- If not, `install/installers/fallback/neovim.sh` downloads pinned tarball release.
-- `install/post/neovim.sh` links `/usr/local/bin/nvim` and verifies required version.
+## Validation
 
-## Adding or changing tools
-
-To add a new apt-installed tool:
-
-1. Create installer script in `install/installers/apt/<tool>.sh`.
-2. Source `install/lib/common.sh`.
-3. Check whether tool already exists; exit early if present.
-4. Install with `apt_install <package>`.
-5. Add the script path to `manifests/base.txt` or `manifests/optional.txt`.
-6. If version-gated, add a pin variable to `install/lib/tool_versions.sh`.
-7. Optionally add a post-step in `install/post/` and call it from installer.
-
-Minimal installer pattern:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$script_dir/../../lib/common.sh"
-
-main() {
-  if command_exists mytool; then
-    log_info "mytool already installed"
-    exit 0
-  fi
-
-  apt_install mytool
-}
-
-main "$@"
-```
-
-## Logging and readability conventions
-
-- Use `log_section` for major phases.
-- Use `log_info`, `log_warn`, and `log_error` for messages.
-- Keep one responsibility per installer script.
-- Keep scripts idempotent (safe to run repeatedly).
-
-## Installer artifacts and git hygiene
-
-The repository ignores common installer artifacts via `.gitignore` entries:
-
-- `install/.cache/`
-- `install/.tmp/`
-- `install/.artifacts/`
-- `install/*.log`
-- `install/*.tmp`
-
-If you add new generated paths under `install/`, update `.gitignore` accordingly.
-
-## Validation commands
-
-Syntax-check installer scripts:
-
-```bash
-bash -n install/install.sh
-bash -n install/installers/apt/neovim.sh
-bash -n install/installers/fallback/neovim.sh
-```
-
-Optional formatting (if needed):
-
-```bash
-stylua --check lua/
-```
-
-## Troubleshooting
-
-- **Not Ubuntu:** installer exits by design.
-- **Neovim version still old:** check fallback download URL/version pins in `tool_versions.sh`.
-- **`fd` missing after install:** verify `install/post/fd.sh` created `/usr/local/bin/fd` symlink.
-- **Permission errors:** rerun with a user that can use sudo.
+- Run installer twice to confirm idempotency.
+- Confirm `%LOCALAPPDATA%\nvim` points to `~/.config/nvim`.
+- Run `:checkhealth` inside Neovim.
