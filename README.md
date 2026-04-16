@@ -23,9 +23,10 @@ Optional:
 
 ```powershell
 winget install --id Python.Python.3.12 -e
+winget install --id JesseDuffield.lazygit -e
 ```
 
-When you run `install/install.ps1 -All`, the installer also adds JetBrainsMono Nerd Font for the current user.
+When you run `install/install.ps1 -All`, the installer also adds Python, lazygit, and JetBrainsMono Nerd Font.
 
 Notes:
 

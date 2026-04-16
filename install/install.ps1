@@ -81,6 +81,7 @@ function Write-InstallationSummary {
   $tools = @(
     @{ Name = "nvim"; Cmd = "nvim"; VersionArgs = @("--version"); Pattern = "NVIM v(.+)" },
     @{ Name = "git"; Cmd = "git"; VersionArgs = @("--version"); Pattern = "git version (.+)" },
+    @{ Name = "lazygit"; Cmd = "lazygit"; VersionArgs = @("--version"); Pattern = "([0-9]+\.[0-9]+\.[0-9]+)" },
     @{ Name = "fd"; Cmd = "fd"; VersionArgs = @("--version"); Pattern = "fd ([^\s]+)" },
     @{ Name = "fzf"; Cmd = "fzf"; VersionArgs = @("--version"); Pattern = "([^\s]+)" },
     @{ Name = "ripgrep"; Cmd = "rg"; VersionArgs = @("--version"); Pattern = "ripgrep ([^\s]+)" },

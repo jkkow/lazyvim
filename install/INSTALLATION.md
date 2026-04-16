@@ -8,6 +8,7 @@ Ubuntu scripts were moved to `install/legacy/ubuntu/`.
 
 - Installs required tools from `install/manifests/windows-base.txt`.
 - Optionally installs extra tools from `install/manifests/windows-optional.txt`.
+- Optional tools currently include Python, lazygit, and JetBrainsMono Nerd Font.
 - Uses `winget` installers in `install/installers/winget/`.
 - Uses fallback download installers from `install/installers/fallback/` when version checks fail.
 - Runs Neovim post steps in `install/post/neovim.ps1`.
@@ -55,6 +56,7 @@ install/
     windows-optional.txt
   installers/
     winget/
+      lazygit.ps1
       nerd-font.ps1
     fallback/
   post/
