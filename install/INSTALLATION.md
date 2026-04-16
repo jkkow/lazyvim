@@ -64,7 +64,7 @@ install/
   lib/
     common.ps1
     version.ps1
-    tool_versions.ps1
+    version_requirements.ps1
   legacy/
     ubuntu/
 ```

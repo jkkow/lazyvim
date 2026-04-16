@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "../../lib/common.ps1")
-. (Join-Path $script_dir "../../lib/tool_versions.ps1")
+. (Join-Path $script_dir "../../lib/version_requirements.ps1")
 
 function Test-NerdFontInstalled {
   $font_dir = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"

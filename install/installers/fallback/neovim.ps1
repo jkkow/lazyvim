@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "../../lib/common.ps1")
 . (Join-Path $script_dir "../../lib/version.ps1")
-. (Join-Path $script_dir "../../lib/tool_versions.ps1")
+. (Join-Path $script_dir "../../lib/version_requirements.ps1")
 
 $fallback_version = Normalize-Version $NEOVIM_FALLBACK_VERSION
 $download_url = "https://github.com/neovim/neovim/releases/download/v${fallback_version}/nvim-win64.zip"
