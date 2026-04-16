@@ -58,6 +58,52 @@ function Read-RelaunchReport {
   return $raw | ConvertFrom-Json
 }
 
+function Get-InstallerResultColumnWidths {
+  param([object[]]$InstallerResults = @())
+
+  $phase_width = 6
+  $status_width = 6
+  $entry_width = 1
+
+  foreach ($result in $InstallerResults) {
+    $phase_value = if ($result.Phase) { [string]$result.Phase } else { "-" }
+    $status_value = if ($result.Status) { [string]$result.Status } else { "-" }
+    $entry_value = if ($result.Entry) { [string]$result.Entry } else { "-" }
+
+    $phase_cell = "[$phase_value]"
+    $phase_width = [Math]::Max($phase_width, $phase_cell.Length)
+    $status_width = [Math]::Max($status_width, $status_value.Length)
+    $entry_width = [Math]::Max($entry_width, $entry_value.Length)
+  }
+
+  return @{
+    Phase = $phase_width
+    Status = $status_width
+    Entry = $entry_width
+  }
+}
+
+function Write-InstallerResultLines {
+  param([object[]]$InstallerResults = @())
+
+  $widths = Get-InstallerResultColumnWidths -InstallerResults $InstallerResults
+
+  foreach ($result in $InstallerResults) {
+    $phase_value = if ($result.Phase) { [string]$result.Phase } else { "-" }
+    $status_value = if ($result.Status) { [string]$result.Status } else { "-" }
+    $entry_value = if ($result.Entry) { [string]$result.Entry } else { "-" }
+    $critical_value = if ($result.Critical) { "critical" } else { "" }
+    $phase_cell = "[$phase_value]"
+
+    $line = ("  {0,-$($widths.Phase)} {1,-$($widths.Status)}  {2,-$($widths.Entry)}  {3}" -f $phase_cell, $status_value, $entry_value, $critical_value).TrimEnd()
+    Write-Output $line
+
+    if ($result.Message) {
+      Write-Output "    reason: $($result.Message)"
+    }
+  }
+}
+
 function Write-RelaunchSummaryReplay {
   param([Parameter(Mandatory = $true)]$Report)
 
@@ -83,14 +129,7 @@ function Write-RelaunchSummaryReplay {
     return
   }
 
-  foreach ($result in $results) {
-    $critical_tag = if ($result.Critical) { " critical" } else { "" }
-    $line = "  [{0}] {1,-8} {2}{3}" -f $result.Phase, $result.Status, $result.Entry, $critical_tag
-    Write-Output $line
-    if ($result.Message) {
-      Write-Output "    reason: $($result.Message)"
-    }
-  }
+  Write-InstallerResultLines -InstallerResults $results
 }
 
 if ($Help) {
@@ -298,14 +337,7 @@ function Write-InstallerExecutionSummary {
     return
   }
 
-  foreach ($result in $InstallerResults) {
-    $critical_tag = if ($result.Critical) { " critical" } else { "" }
-    $line = "  [{0}] {1,-8} {2}{3}" -f $result.Phase, $result.Status, $result.Entry, $critical_tag
-    Write-Output $line
-    if ($result.Message) {
-      Write-Output "    reason: $($result.Message)"
-    }
-  }
+  Write-InstallerResultLines -InstallerResults $InstallerResults
 }
 
 function Write-InstallationSummary {
@@ -476,6 +508,7 @@ function Write-InstallationSummary {
   $requirements = Get-MinRequiredVersions
   $all_keys = @($managed_tool_keys + $requirements.Keys) | Sort-Object -Unique
   $process_path_refreshed = $false
+  $summary_rows = @()
 
   foreach ($tool_key in $all_keys) {
     $required = Get-MinRequiredVersion -Tool $tool_key
@@ -551,7 +584,26 @@ function Write-InstallationSummary {
       }
     }
 
-    Write-Output ("  {0,-12} required: {1,-10} installed: {2,-12} status: {3}" -f $display_name, $required_out, $installed_out, $status)
+    $summary_rows += [PSCustomObject]@{
+      Name = $display_name
+      Required = $required_out
+      Installed = $installed_out
+      Status = $status
+    }
+  }
+
+  $name_width = 12
+  $required_width = 10
+  $installed_width = 12
+
+  foreach ($row in $summary_rows) {
+    $name_width = [Math]::Max($name_width, ([string]$row.Name).Length)
+    $required_width = [Math]::Max($required_width, ([string]$row.Required).Length)
+    $installed_width = [Math]::Max($installed_width, ([string]$row.Installed).Length)
+  }
+
+  foreach ($row in $summary_rows) {
+    Write-Output ("  {0,-$name_width}  required: {1,-$required_width}  installed: {2,-$installed_width}  status: {3}" -f $row.Name, $row.Required, $row.Installed, $row.Status)
   }
 
   Write-InstallerExecutionSummary -InstallerResults $InstallerResults
