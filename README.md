@@ -61,6 +61,24 @@ Run the installer from the repository root:
 powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All
 ```
 
+Install a single tool separately (example: `fzf`):
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\install\installers\winget\fzf.ps1
+```
+
+or:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install\installers\winget\fzf.ps1
+```
+
+Notes:
+
+- Run these commands from the repository root (or use absolute paths).
+- Running an individual installer script skips the top-level checks and summary from `install/install.ps1`.
+- The `fzf` script can fall back to `install/installers/fallback/fzf.ps1` if winget does not provide the required version.
+
 The installer links `%LOCALAPPDATA%\nvim` to `~/.config/nvim` automatically.
 For GUI Neovim clients (Neovide, nvim-qt), this repo sets `guifont` to `JetBrainsMono Nerd Font:h11`.
 
