@@ -13,7 +13,7 @@ Install core tools with `winget` (PowerShell):
 
 ```powershell
 winget install --id gerardog.gsudo -e --scope machine
-winget install --id Neovim.Neovim -e
+winget install --id Neovim.Neovim -e --scope machine
 winget install --id Git.Git -e
 winget install --id BurntSushi.ripgrep.MSVC -e
 winget install --id sharkdp.fd -e
@@ -93,6 +93,9 @@ Notes:
 - Installer default scope is `machine`; use `-Scope user` to override.
 - `gsudo` and `neovim` are treated as critical installers (failure stops the run).
 - `neovim` automatically falls back to `install/installers/fallback/neovim.ps1` when winget install fails.
+- If `POST INSTALLATION` appears slow, it is usually the first `nvim --headless "+qa"` plugin bootstrap/clone step.
+- `%LOCALAPPDATA%\nvim` is created as a junction first; if junction creation fails, the script falls back to a symbolic link.
+- Nerd Font updates can skip in-use files (for example, when terminal apps are open). Close those apps and rerun to refresh all files.
 
 Manifests:
 
@@ -106,7 +109,7 @@ Minimum required versions:
 - The installer compares installed versions against this file and installs/upgrades only when needed.
 - Tools listed there but not managed by installer scripts are shown as `not-managed` in the final summary.
 
-The installer links `%LOCALAPPDATA%\nvim` to `~/.config/nvim` automatically.
+The installer links `%LOCALAPPDATA%\nvim` to `~/.config/nvim` automatically (junction first, then symbolic link fallback).
 For GUI Neovim clients (Neovide, nvim-qt), this repo sets `guifont` to `JetBrainsMono Nerd Font:h11`.
 
 Start Neovim:
@@ -115,7 +118,7 @@ Start Neovim:
 nvim
 ```
 
-On first launch, `lazy.nvim` bootstraps and installs plugins automatically.
+`lazy.nvim` bootstraps and installs plugins automatically on first startup. In this setup, that first bootstrap can also happen during installer post-install validation (`nvim --headless "+qa"`).
 
 ## Verification
 
