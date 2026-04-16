@@ -75,9 +75,9 @@ if (-not $nvim_exe) {
   throw "nvim executable not found after installation"
 }
 
-& $nvim_exe --headless "+qa"
+& $nvim_exe --headless --clean -u NONE "+qa"
 if ($LASTEXITCODE -ne 0) {
   throw "Neovim headless startup failed (exit=$LASTEXITCODE)"
 }
 
-Write-LogInfo "Neovim post-install checks passed"
+Write-LogInfo "Neovim post-install smoke checks passed"

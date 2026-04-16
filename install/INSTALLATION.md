@@ -55,12 +55,22 @@ Scope policy:
 4. `POST INSTALLATION`
 5. `INSTALLATION SUMMARY`
 
+During summary collection, the installer refreshes the current process PATH from machine/user environment variables.
+This reduces false `not-found` results immediately after winget installs in the same PowerShell session.
+
 For each managed tool, installers compare the currently installed version with the required version from
 `install/min-required-versions.txt`:
 
 - If not installed, install.
 - If installed but lower than required, install/upgrade.
 - If installed and meets required version, pass.
+
+Summary status notes:
+
+- `ok`: installed and version meets requirement.
+- `detected-after-refresh`: installed and version meets requirement after PATH refresh or direct executable probing.
+- `version-check-deferred`: package is installed, but version could not be resolved in the current session.
+- `not-found`: command and known install locations were not detected.
 
 Failure policy:
 
@@ -121,7 +131,7 @@ After package installation, `install/post/neovim.ps1`:
 - backs up existing `%LOCALAPPDATA%\nvim` if needed
 - creates `%LOCALAPPDATA%\nvim` as a junction (or symbolic link fallback)
 - validates `init.lua` visibility through the link
-- validates Neovim startup with `nvim --headless "+qa"`
+- validates Neovim binary startup with `nvim --headless --clean -u NONE "+qa"`
 
 ## Font behavior
 

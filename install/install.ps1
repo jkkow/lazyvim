@@ -314,7 +314,35 @@ function Write-InstallationSummary {
     [object[]]$InstallerResults = @()
   )
 
-  function Get-InstalledVersion {
+  function Refresh-ProcessPath {
+    $sources = @(
+      $env:Path,
+      [Environment]::GetEnvironmentVariable("Path", "Machine"),
+      [Environment]::GetEnvironmentVariable("Path", "User")
+    )
+
+    $seen = New-Object "System.Collections.Generic.HashSet[string]" ([System.StringComparer]::OrdinalIgnoreCase)
+    $combined = New-Object System.Collections.Generic.List[string]
+
+    foreach ($source in $sources) {
+      if ([string]::IsNullOrWhiteSpace($source)) {
+        continue
+      }
+
+      foreach ($entry in $source.Split(";", [System.StringSplitOptions]::RemoveEmptyEntries)) {
+        $normalized = $entry.Trim()
+        if (-not [string]::IsNullOrWhiteSpace($normalized) -and $seen.Add($normalized)) {
+          [void]$combined.Add($normalized)
+        }
+      }
+    }
+
+    if ($combined.Count -gt 0) {
+      $env:Path = [string]::Join(";", $combined)
+    }
+  }
+
+  function Get-InstalledVersionFromCommand {
     param(
       [string]$Command,
       [string[]]$VersionArgs = @("--version"),
@@ -331,6 +359,74 @@ function Write-InstallationSummary {
     }
 
     return ""
+  }
+
+  function Get-InstalledVersionFromCandidates {
+    param(
+      [string[]]$Candidates = @(),
+      [string[]]$VersionArgs = @("--version"),
+      [string]$Pattern = "([0-9]+(?:\.[0-9]+){1,3})"
+    )
+
+    foreach ($candidate in $Candidates) {
+      if ([string]::IsNullOrWhiteSpace($candidate)) {
+        continue
+      }
+
+      if (-not (Test-Path -LiteralPath $candidate)) {
+        continue
+      }
+
+      $line = Get-FirstOutputLine -Command $candidate -Arguments $VersionArgs
+      if ($line -and ($line -match $Pattern)) {
+        return $matches[1]
+      }
+    }
+
+    return ""
+  }
+
+  function Get-ToolExecutableCandidates {
+    param([Parameter(Mandatory = $true)][string]$ToolKey)
+
+    switch ($ToolKey) {
+      "neovim" {
+        return @(
+          (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\nvim.exe"),
+          (Join-Path $env:LOCALAPPDATA "Programs\Neovim\nvim-win64\bin\nvim.exe"),
+          (Join-Path $env:LOCALAPPDATA "Programs\Neovim\bin\nvim.exe"),
+          (Join-Path $env:ProgramFiles "Neovim\bin\nvim.exe")
+        )
+      }
+      "python" {
+        return @(
+          (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\python.exe"),
+          (Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe"),
+          (Join-Path $env:ProgramFiles "Python312\python.exe")
+        )
+      }
+      "nodejs" {
+        return @(
+          (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\node.exe"),
+          (Join-Path $env:ProgramFiles "nodejs\node.exe"),
+          (Join-Path $env:LOCALAPPDATA "Programs\nodejs\node.exe")
+        )
+      }
+      default {
+        return @()
+      }
+    }
+  }
+
+  function Get-ToolWingetId {
+    param([Parameter(Mandatory = $true)][string]$ToolKey)
+
+    switch ($ToolKey) {
+      "neovim" { return "Neovim.Neovim" }
+      "python" { return "Python.Python.3.12" }
+      "nodejs" { return "OpenJS.NodeJS.LTS" }
+      default { return "" }
+    }
   }
 
   function Test-NerdFontInstalled {
@@ -379,6 +475,7 @@ function Write-InstallationSummary {
 
   $requirements = Get-MinRequiredVersions
   $all_keys = @($managed_tool_keys + $requirements.Keys) | Sort-Object -Unique
+  $process_path_refreshed = $false
 
   foreach ($tool_key in $all_keys) {
     $required = Get-MinRequiredVersion -Tool $tool_key
@@ -386,17 +483,40 @@ function Write-InstallationSummary {
 
     $display_name = $tool_key
     $installed = ""
+    $detected_after_refresh = $false
+    $resolved_from_candidates = $false
     if ($tool_specs.ContainsKey($tool_key)) {
       $spec = $tool_specs[$tool_key]
       $display_name = $spec.Name
       if ($tool_key -eq "nerd-font") {
         $installed = Get-NerdFontInstalledVersion
       } else {
-        $installed = Get-InstalledVersion -Command $spec.Cmd -VersionArgs $spec.VersionArgs -Pattern $spec.Pattern
+        $installed = Get-InstalledVersionFromCommand -Command $spec.Cmd -VersionArgs $spec.VersionArgs -Pattern $spec.Pattern
+        if (-not $installed) {
+          if (-not $process_path_refreshed) {
+            Refresh-ProcessPath
+            $process_path_refreshed = $true
+          }
+
+          $installed = Get-InstalledVersionFromCommand -Command $spec.Cmd -VersionArgs $spec.VersionArgs -Pattern $spec.Pattern
+          if ($installed) {
+            $detected_after_refresh = $true
+          }
+        }
+
+        if (-not $installed) {
+          $candidates = @(Get-ToolExecutableCandidates -ToolKey $tool_key)
+          if ($candidates.Count -gt 0) {
+            $installed = Get-InstalledVersionFromCandidates -Candidates $candidates -VersionArgs $spec.VersionArgs -Pattern $spec.Pattern
+            if ($installed) {
+              $resolved_from_candidates = $true
+            }
+          }
+        }
       }
     } else {
       $display_name = $tool_key
-      $installed = Get-InstalledVersion -Command $tool_key
+      $installed = Get-InstalledVersionFromCommand -Command $tool_key
     }
 
     $required_out = if ($required) { $required } else { "-" }
@@ -407,11 +527,21 @@ function Write-InstallationSummary {
       if (-not $required) {
         $status = "missing-required"
       } elseif (-not $installed) {
-        $status = "not-found"
+        $winget_id = Get-ToolWingetId -ToolKey $tool_key
+        if ($winget_id -and (Test-WingetPackageInstalled -Id $winget_id)) {
+          $status = "version-check-deferred"
+          $installed_out = "installed"
+        } else {
+          $status = "not-found"
+        }
       } else {
         try {
           if (Test-VersionGreaterOrEqual -Current $installed -Required $required) {
-            $status = "ok"
+            if ($detected_after_refresh -or $resolved_from_candidates) {
+              $status = "detected-after-refresh"
+            } else {
+              $status = "ok"
+            }
           } else {
             $status = "upgrade-needed"
           }
