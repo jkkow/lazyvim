@@ -3,6 +3,7 @@ param(
   [switch]$All,
   [ValidateSet("user", "machine")][string]$Scope = "machine",
   [switch]$MachineScope,
+  [switch]$ElevatedRelaunch,
   [switch]$Help
 )
 
@@ -37,13 +38,53 @@ if ($MachineScope) {
   $effective_scope = "machine"
 }
 
-$env:NVIM_INSTALL_SCOPE = $effective_scope
-Write-LogInfo "Package installation scope: $effective_scope"
-
 if (-not $IsWindows) {
   Write-LogError "This installer supports Windows 11 only."
   exit 1
 }
+
+if ($effective_scope -eq "machine" -and -not (Test-IsProcessElevated)) {
+  if (Test-IsSshSession) {
+    Write-LogError "Machine-scope install requires an elevated local session. SSH sessions cannot trigger UAC elevation."
+    Write-LogError "Use -Scope user over SSH, or run this installer locally in an elevated terminal."
+    exit 1
+  }
+
+  if ($ElevatedRelaunch) {
+    Write-LogError "Installer relaunch completed without administrator elevation. Start PowerShell as Administrator and retry."
+    exit 1
+  }
+
+  $ps_exe = if (Test-CommandExists "pwsh") { "pwsh" } else { "powershell" }
+  $relaunch_args = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", $MyInvocation.MyCommand.Path,
+    "-Scope", $effective_scope,
+    "-ElevatedRelaunch"
+  )
+
+  if ($BaseOnly) {
+    $relaunch_args += "-BaseOnly"
+  }
+  if ($All) {
+    $relaunch_args += "-All"
+  }
+  if ($MachineScope) {
+    $relaunch_args += "-MachineScope"
+  }
+
+  Write-LogInfo "Machine-scope install requires elevation. Relaunching installer with administrator rights."
+  try {
+    $elevated = Start-Process -FilePath $ps_exe -Verb RunAs -ArgumentList $relaunch_args -WorkingDirectory $PSScriptRoot -PassThru -Wait
+    exit $elevated.ExitCode
+  } catch {
+    throw "Administrator elevation was canceled or failed."
+  }
+}
+
+$env:NVIM_INSTALL_SCOPE = $effective_scope
+Write-LogInfo "Package installation scope: $effective_scope"
 
 if (-not (Test-CommandExists "winget")) {
   Write-LogError "winget is required but not found. Install App Installer from Microsoft Store."

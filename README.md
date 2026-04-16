@@ -93,6 +93,8 @@ Notes:
 - Installer default scope is `machine`; use `-Scope user` to override.
 - `gsudo` and `neovim` are treated as critical installers (failure stops the run).
 - `neovim` automatically falls back to `install/installers/fallback/neovim.ps1` when winget install fails.
+- For `-Scope machine`, `install/install.ps1` relaunches itself once with UAC admin elevation.
+- In SSH sessions, machine-scope auto-elevation is not supported; use `-Scope user` or run locally as Administrator.
 - If `POST INSTALLATION` appears slow, it is usually the first `nvim --headless "+qa"` plugin bootstrap/clone step.
 - `%LOCALAPPDATA%\nvim` is created as a junction first; if junction creation fails, the script falls back to a symbolic link.
 - Nerd Font updates can skip in-use files (for example, when terminal apps are open). Close those apps and rerun to refresh all files.

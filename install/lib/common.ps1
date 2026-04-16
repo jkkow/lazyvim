@@ -36,6 +36,18 @@ function Test-IsProcessElevated {
   }
 }
 
+function Test-IsSshSession {
+  $ssh_markers = @("SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY")
+  foreach ($name in $ssh_markers) {
+    $value = [Environment]::GetEnvironmentVariable($name)
+    if (-not [string]::IsNullOrWhiteSpace($value)) {
+      return $true
+    }
+  }
+
+  return $false
+}
+
 function Get-FirstOutputLine {
   param(
     [Parameter(Mandatory = $true)][string]$Command,

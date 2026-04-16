@@ -42,15 +42,18 @@ Scope policy:
 
 - Default installs use `machine` scope for predictable system-wide tool paths.
 - Use `-Scope user` when you intentionally want per-user package installs.
+- For `machine` scope in local sessions, installer self-elevates once via UAC and then continues elevated.
+- For `machine` scope over SSH, installer stops early because UAC elevation cannot be triggered remotely.
 
 ## Runtime flow
 
 `install/install.ps1` runs these phases:
 
-1. `BASE INSTALLATION` (`gsudo` first, then `neovim`)
-2. `OPTIONAL INSTALLATION` (unless `-BaseOnly`)
-3. `POST INSTALLATION`
-4. `INSTALLATION SUMMARY`
+1. `ELEVATION GATE` (machine scope only; local UAC self-relaunch)
+2. `BASE INSTALLATION` (`gsudo` first, then `neovim`)
+3. `OPTIONAL INSTALLATION` (unless `-BaseOnly`)
+4. `POST INSTALLATION`
+5. `INSTALLATION SUMMARY`
 
 For each managed tool, installers compare the currently installed version with the required version from
 `install/min-required-versions.txt`:
