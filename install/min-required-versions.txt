@@ -2,6 +2,7 @@
 # Format: <tool>=<version>
 
 neovim=0.11.7
+gsudo=2.6.1
 git=2.30.0
 ripgrep=13.0.0
 fd=8.7.0

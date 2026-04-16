@@ -29,7 +29,13 @@ if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $requi
   exit 0
 }
 
-Install-WingetPackage -Id "Neovim.Neovim"
+try {
+  Install-WingetPackage -Id "Neovim.Neovim"
+} catch {
+  Write-LogWarn "winget install for Neovim failed, trying fallback: $($_.Exception.Message)"
+  & (Join-Path $script_dir "../fallback/neovim.ps1")
+  exit 0
+}
 
 $current = Get-NvimVersion
 if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $required_version)) {

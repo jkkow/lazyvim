@@ -1,7 +1,7 @@
 param(
   [switch]$BaseOnly,
   [switch]$All,
-  [ValidateSet("user", "machine")][string]$Scope = "user",
+  [ValidateSet("user", "machine")][string]$Scope = "machine",
   [switch]$MachineScope,
   [switch]$Help
 )
@@ -20,7 +20,7 @@ Usage: .\install\install.ps1 [-BaseOnly|-All] [-Scope user|machine] [-MachineSco
 
 -BaseOnly  Install only required packages.
 -All       Install required and optional packages.
--Scope     winget scope for package installs: user (default) or machine.
+-Scope     winget scope for package installs: machine (default) or user.
 -MachineScope Shortcut for -Scope machine.
 -Help      Show this help message.
 "@ | Write-Output
@@ -55,6 +55,33 @@ if ($BaseOnly) {
   $install_optional = $false
 }
 
+$script:INSTALLER_RESULTS = @()
+$critical_entries = @{}
+foreach ($entry in @(
+  "installers/winget/gsudo.ps1",
+  "installers/winget/neovim.ps1"
+)) {
+  $critical_entries[$entry.ToLowerInvariant()] = $true
+}
+
+function Add-InstallerResult {
+  param(
+    [Parameter(Mandatory = $true)][string]$Phase,
+    [Parameter(Mandatory = $true)][string]$Entry,
+    [Parameter(Mandatory = $true)][string]$Status,
+    [bool]$Critical = $false,
+    [string]$Message = ""
+  )
+
+  $script:INSTALLER_RESULTS += [PSCustomObject]@{
+    Phase = $Phase
+    Entry = $Entry
+    Status = $Status
+    Critical = $Critical
+    Message = $Message
+  }
+}
+
 function Get-ManifestEntries {
   param([Parameter(Mandatory = $true)][string]$ManifestPath)
 
@@ -68,7 +95,11 @@ function Get-ManifestEntries {
 }
 
 function Run-Manifest {
-  param([Parameter(Mandatory = $true)][string]$ManifestPath)
+  param(
+    [Parameter(Mandatory = $true)][string]$ManifestPath,
+    [Parameter(Mandatory = $true)][string]$PhaseName,
+    [hashtable]$CriticalEntries = @{}
+  )
 
   $entries = @(Get-ManifestEntries -ManifestPath $ManifestPath)
   $total = $entries.Count
@@ -76,18 +107,66 @@ function Run-Manifest {
 
   foreach ($entry in $entries) {
     $index += 1
+    $entry_key = $entry.ToLowerInvariant()
+    $is_critical = $CriticalEntries.ContainsKey($entry_key)
     $script_path = Join-Path $script_dir $entry
+
     if (-not (Test-Path -LiteralPath $script_path)) {
-      throw "Missing installer script: $entry"
+      $message = "Missing installer script: $entry"
+      Add-InstallerResult -Phase $PhaseName -Entry $entry -Status "failed" -Critical $is_critical -Message $message
+      if ($is_critical) {
+        throw $message
+      }
+
+      Write-LogWarn $message
+      continue
     }
 
-    Write-LogInfo "[$index/$total] Running $entry"
-    & $script_path
+    $critical_suffix = if ($is_critical) { " (critical)" } else { "" }
+    Write-LogInfo "[$index/$total] Running $entry$critical_suffix"
+
+    try {
+      & $script_path
+      Add-InstallerResult -Phase $PhaseName -Entry $entry -Status "ok" -Critical $is_critical
+    } catch {
+      $message = $_.Exception.Message
+      Add-InstallerResult -Phase $PhaseName -Entry $entry -Status "failed" -Critical $is_critical -Message $message
+      if ($is_critical) {
+        Write-LogError "Installer failed: $entry - $message"
+        throw "Critical installer failed: $entry"
+      }
+
+      Write-LogWarn "Installer failed (continuing): $entry - $message"
+    }
+  }
+}
+
+function Write-InstallerExecutionSummary {
+  param([object[]]$InstallerResults = @())
+
+  Write-Output ""
+  Write-Output "Installer execution results:"
+
+  if (-not $InstallerResults -or $InstallerResults.Count -eq 0) {
+    Write-Output "  (no installer scripts executed)"
+    return
+  }
+
+  foreach ($result in $InstallerResults) {
+    $critical_tag = if ($result.Critical) { " critical" } else { "" }
+    $line = "  [{0}] {1,-8} {2}{3}" -f $result.Phase, $result.Status, $result.Entry, $critical_tag
+    Write-Output $line
+    if ($result.Message) {
+      Write-Output "    reason: $($result.Message)"
+    }
   }
 }
 
 function Write-InstallationSummary {
-  param([Parameter(Mandatory = $true)][string]$Mode)
+  param(
+    [Parameter(Mandatory = $true)][string]$Mode,
+    [object[]]$InstallerResults = @()
+  )
 
   function Get-InstalledVersion {
     param(
@@ -138,10 +217,11 @@ function Write-InstallationSummary {
   Write-Output "Mode: $Mode"
   Write-Output ""
 
-  $managed_tool_keys = @("fd", "fzf", "git", "lazygit", "neovim", "nerd-font", "nodejs", "python", "ripgrep")
+  $managed_tool_keys = @("fd", "fzf", "git", "gsudo", "lazygit", "neovim", "nerd-font", "nodejs", "python", "ripgrep")
   $tool_specs = @{
     "neovim" = @{ Name = "nvim"; Cmd = "nvim"; VersionArgs = @("--version"); Pattern = "NVIM v(.+)" }
     "git" = @{ Name = "git"; Cmd = "git"; VersionArgs = @("--version"); Pattern = "git version (.+)" }
+    "gsudo" = @{ Name = "gsudo"; Cmd = "gsudo"; VersionArgs = @("--version"); Pattern = "([0-9]+(?:\.[0-9]+){1,3})" }
     "lazygit" = @{ Name = "lazygit"; Cmd = "lazygit"; VersionArgs = @("--version"); Pattern = "([0-9]+\.[0-9]+\.[0-9]+)" }
     "fd" = @{ Name = "fd"; Cmd = "fd"; VersionArgs = @("--version"); Pattern = "fd ([^\s]+)" }
     "fzf" = @{ Name = "fzf"; Cmd = "fzf"; VersionArgs = @("--version"); Pattern = "([^\s]+)" }
@@ -197,21 +277,43 @@ function Write-InstallationSummary {
 
     Write-Output ("  {0,-12} required: {1,-10} installed: {2,-12} status: {3}" -f $display_name, $required_out, $installed_out, $status)
   }
+
+  Write-InstallerExecutionSummary -InstallerResults $InstallerResults
 }
-
-Write-LogSection "BASE INSTALLATION"
-Run-Manifest -ManifestPath (Join-Path $script_dir "manifests/windows-base.txt")
-
-if ($install_optional) {
-  Write-LogSection "OPTIONAL INSTALLATION"
-  Run-Manifest -ManifestPath (Join-Path $script_dir "manifests/windows-optional.txt")
-} else {
-  Write-LogInfo "Optional package installation skipped (-BaseOnly)"
-}
-
-Write-LogSection "POST INSTALLATION"
-& (Join-Path $script_dir "post/neovim.ps1")
 
 $mode = if ($install_optional) { "base + optional" } else { "base only" }
-Write-InstallationSummary -Mode $mode
+$install_error = ""
+
+try {
+  Write-LogSection "BASE INSTALLATION"
+  Run-Manifest -ManifestPath (Join-Path $script_dir "manifests/windows-base.txt") -PhaseName "base" -CriticalEntries $critical_entries
+
+  if ($install_optional) {
+    Write-LogSection "OPTIONAL INSTALLATION"
+    Run-Manifest -ManifestPath (Join-Path $script_dir "manifests/windows-optional.txt") -PhaseName "optional"
+  } else {
+    Write-LogInfo "Optional package installation skipped (-BaseOnly)"
+  }
+
+  Write-LogSection "POST INSTALLATION"
+  $post_entry = "post/neovim.ps1"
+  try {
+    & (Join-Path $script_dir $post_entry)
+    Add-InstallerResult -Phase "post" -Entry $post_entry -Status "ok" -Critical $true
+  } catch {
+    $message = $_.Exception.Message
+    Add-InstallerResult -Phase "post" -Entry $post_entry -Status "failed" -Critical $true -Message $message
+    throw "Critical installer failed: $post_entry"
+  }
+} catch {
+  $install_error = $_.Exception.Message
+  Write-LogWarn "Installation stopped due to critical failure: $install_error"
+}
+
+Write-InstallationSummary -Mode $mode -InstallerResults $script:INSTALLER_RESULTS
+
+if ($install_error) {
+  throw $install_error
+}
+
 Write-LogInfo "Installation complete"

@@ -8,13 +8,14 @@ Ubuntu scripts were moved to `install/legacy/ubuntu/`.
 
 - Installs required tools from `install/manifests/windows-base.txt`.
 - Optionally installs extra tools from `install/manifests/windows-optional.txt`.
+- Installs `gsudo` first in the base phase, then installs Neovim.
 - Optional tools currently include Python, Node.js (LTS), lazygit, and JetBrainsMono Nerd Font.
 - Reads minimum required versions from `install/min-required-versions.txt`.
 - Uses `winget` installers in `install/installers/winget/`.
 - Uses fallback download installers from `install/installers/fallback/` when version checks fail.
 - Runs Neovim post steps in `install/post/neovim.ps1`.
 - Creates `%LOCALAPPDATA%\nvim` as a link to `~/.config/nvim`.
-- Uses `user` scope by default for winget installs (with explicit machine override).
+- Uses `machine` scope by default for winget installs (with explicit user override).
 
 ## Usage
 
@@ -33,20 +34,20 @@ Flags:
 
 - `-BaseOnly`: install only required tools.
 - `-All`: install required and optional tools.
-- `-Scope`: set winget scope to `user` (default) or `machine`.
+- `-Scope`: set winget scope to `machine` (default) or `user`.
 - `-MachineScope`: shortcut for machine-wide installs.
 - `-Help`: show help.
 
 Scope policy:
 
-- Default installs use `user` scope to avoid unnecessary admin prompts and system-wide changes.
-- Use `-MachineScope` only when you intentionally want machine-wide package installs.
+- Default installs use `machine` scope for predictable system-wide tool paths.
+- Use `-Scope user` when you intentionally want per-user package installs.
 
 ## Runtime flow
 
 `install/install.ps1` runs these phases:
 
-1. `BASE INSTALLATION`
+1. `BASE INSTALLATION` (`gsudo` first, then `neovim`)
 2. `OPTIONAL INSTALLATION` (unless `-BaseOnly`)
 3. `POST INSTALLATION`
 4. `INSTALLATION SUMMARY`
@@ -58,10 +59,16 @@ For each managed tool, installers compare the currently installed version with t
 - If installed but lower than required, install/upgrade.
 - If installed and meets required version, pass.
 
+Failure policy:
+
+- `gsudo` and `neovim` are critical installers. If either fails, the installer stops.
+- `neovim` winget failures automatically fall back to `install/installers/fallback/neovim.ps1`.
+- Other installer failures are logged and execution continues.
+
 Manifest entries are executed sequentially and shown as:
 
 ```text
-[INFO] [3/5] Running installers/winget/ripgrep.ps1
+[INFO] [4/6] Running installers/winget/ripgrep.ps1
 ```
 
 Each manifest line is a repository-relative path to a script under `install/` (blank lines and `#` comments are ignored).
@@ -88,6 +95,7 @@ install/
     windows-optional.txt
   installers/
     winget/
+      gsudo.ps1
       lazygit.ps1
       nodejs.ps1
       nerd-font.ps1

@@ -12,6 +12,7 @@ LazyVim defaults used in this repo:
 Install core tools with `winget` (PowerShell):
 
 ```powershell
+winget install --id gerardog.gsudo -e --scope machine
 winget install --id Neovim.Neovim -e
 winget install --id Git.Git -e
 winget install --id BurntSushi.ripgrep.MSVC -e
@@ -28,6 +29,7 @@ winget install --id JesseDuffield.lazygit -e
 ```
 
 When you run `install/install.ps1 -All`, the installer also adds Python, Node.js (LTS), lazygit, and JetBrainsMono Nerd Font.
+Base installation now installs `gsudo` first, then `neovim`.
 
 Notes:
 
@@ -88,6 +90,9 @@ Notes:
 - Run these commands from the repository root (or use absolute paths).
 - Running an individual installer script skips the top-level checks and summary from `install/install.ps1`.
 - The `fzf` script can fall back to `install/installers/fallback/fzf.ps1` if winget does not provide the required version.
+- Installer default scope is `machine`; use `-Scope user` to override.
+- `gsudo` and `neovim` are treated as critical installers (failure stops the run).
+- `neovim` automatically falls back to `install/installers/fallback/neovim.ps1` when winget install fails.
 
 Manifests:
 
@@ -136,6 +141,6 @@ If your setup becomes unstable, removing `nvim-data` is usually safe; Neovim rec
 ## Installer Scope
 
 `install/` is Windows-first and based on PowerShell + winget.
-- Default package scope is `user`.
-- Use `-MachineScope` only when you explicitly need machine-wide installs.
+- Default package scope is `machine`.
+- Use `-Scope user` when you explicitly need per-user installs.
 Legacy Ubuntu scripts are available in `install/legacy/ubuntu/`.

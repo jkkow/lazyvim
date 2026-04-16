@@ -43,6 +43,13 @@ function Test-NerdFontInstalled {
   return $files.Count -gt 0
 }
 
+function Test-IsFileInUseError {
+  param([Parameter(Mandatory = $true)][System.Exception]$Exception)
+
+  $message = $Exception.Message
+  return $message -match "being used by another process" -or $message -match "used by another process"
+}
+
 $installed_version = Get-InstalledNerdFontVersion
 if ((Test-NerdFontInstalled) -and $installed_version -and (Test-VersionGreaterOrEqual -Current $installed_version -Required $required_version)) {
   Write-LogInfo "$NERD_FONT_NAME Nerd Font $installed_version already satisfies $required_version"
@@ -73,12 +80,51 @@ try {
     throw "No TTF files found in downloaded font archive"
   }
 
+  $copied_count = 0
+  $skipped_in_use = @()
+  $copy_failures = @()
+
   foreach ($font_file in $ttf_files) {
     $destination = Join-Path $font_dir $font_file.Name
-    Copy-Item -LiteralPath $font_file.FullName -Destination $destination -Force
+    $destination_exists = Test-Path -LiteralPath $destination
+
+    try {
+      Copy-Item -LiteralPath $font_file.FullName -Destination $destination -Force
+      $copied_count += 1
+    } catch {
+      if (Test-IsFileInUseError -Exception $_.Exception) {
+        $skipped_in_use += $font_file.Name
+        Write-LogWarn "Skipping in-use font file: $($font_file.Name)"
+        continue
+      }
+
+      if ($destination_exists) {
+        $copy_failures += "$($font_file.Name): destination exists but copy failed ($($_.Exception.Message))"
+        continue
+      }
+
+      $copy_failures += "$($font_file.Name): $($_.Exception.Message)"
+      continue
+    }
 
     $font_name = [IO.Path]::GetFileNameWithoutExtension($font_file.Name)
     New-ItemProperty -Path $registry_path -Name "$font_name (TrueType)" -Value $destination -PropertyType String -Force | Out-Null
+  }
+
+  if ($copy_failures.Count -gt 0) {
+    throw "Failed to install some Nerd Font files: $($copy_failures -join '; ')"
+  }
+
+  if ($skipped_in_use.Count -gt 0) {
+    Write-LogWarn "Skipped $($skipped_in_use.Count) in-use font files. Close terminal apps and rerun to refresh all files."
+  }
+
+  if ($copied_count -eq 0 -and -not (Test-NerdFontInstalled)) {
+    throw "No Nerd Font files were copied and no existing installation was detected"
+  }
+
+  if ($copied_count -eq 0 -and (Test-NerdFontInstalled)) {
+    Write-LogInfo "No new Nerd Font files copied; existing installation detected. Updating version state only."
   }
 
   Set-InstalledNerdFontVersion -Version $font_version

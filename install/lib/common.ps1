@@ -26,6 +26,16 @@ function Test-CommandExists {
   return [bool](Get-Command $CommandName -ErrorAction SilentlyContinue)
 }
 
+function Test-IsProcessElevated {
+  try {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+  } catch {
+    return $false
+  }
+}
+
 function Get-FirstOutputLine {
   param(
     [Parameter(Mandatory = $true)][string]$Command,
@@ -54,7 +64,7 @@ function Install-WingetPackage {
     $resolved_scope = $env:NVIM_INSTALL_SCOPE
   }
   if ([string]::IsNullOrWhiteSpace($resolved_scope)) {
-    $resolved_scope = "user"
+    $resolved_scope = "machine"
   }
 
   $resolved_scope = $resolved_scope.ToLowerInvariant()
@@ -73,7 +83,14 @@ function Install-WingetPackage {
   )
 
   Write-LogInfo "Installing $Id via winget (scope=$resolved_scope)"
-  & winget @args
+  $run_with_gsudo = $resolved_scope -eq "machine" -and -not (Test-IsProcessElevated) -and (Test-CommandExists "gsudo")
+  if ($run_with_gsudo) {
+    Write-LogInfo "Running machine-scope install via gsudo"
+    & gsudo winget @args
+  } else {
+    & winget @args
+  }
+
   if ($LASTEXITCODE -ne 0) {
     throw "winget install failed for $Id (exit=$LASTEXITCODE)"
   }
