@@ -46,20 +46,33 @@ function Get-FirstOutputLine {
 function Install-WingetPackage {
   param(
     [Parameter(Mandatory = $true)][string]$Id,
-    [string]$Scope = "machine"
+    [string]$Scope = ""
   )
+
+  $resolved_scope = $Scope
+  if ([string]::IsNullOrWhiteSpace($resolved_scope)) {
+    $resolved_scope = $env:NVIM_INSTALL_SCOPE
+  }
+  if ([string]::IsNullOrWhiteSpace($resolved_scope)) {
+    $resolved_scope = "user"
+  }
+
+  $resolved_scope = $resolved_scope.ToLowerInvariant()
+  if ($resolved_scope -ne "user" -and $resolved_scope -ne "machine") {
+    throw "Invalid winget scope '$resolved_scope'. Use 'user' or 'machine'."
+  }
 
   $args = @(
     "install",
     "--id", $Id,
     "-e",
-    "--scope", $Scope,
+    "--scope", $resolved_scope,
     "--accept-package-agreements",
     "--accept-source-agreements",
     "--disable-interactivity"
   )
 
-  Write-LogInfo "Installing $Id via winget (scope=$Scope)"
+  Write-LogInfo "Installing $Id via winget (scope=$resolved_scope)"
   & winget @args
   if ($LASTEXITCODE -ne 0) {
     throw "winget install failed for $Id (exit=$LASTEXITCODE)"

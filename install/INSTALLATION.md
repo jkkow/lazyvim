@@ -22,13 +22,22 @@ Run from the repository root in PowerShell:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -BaseOnly
 powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All
+powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All -Scope user
+powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All -MachineScope
 ```
 
 Flags:
 
 - `-BaseOnly`: install only required tools.
 - `-All`: install required and optional tools.
+- `-Scope`: set winget scope to `user` (default) or `machine`.
+- `-MachineScope`: shortcut for machine-wide installs.
 - `-Help`: show help.
+
+Scope policy:
+
+- Default installs use `user` scope to avoid unnecessary admin prompts and system-wide changes.
+- Use `-MachineScope` only when you intentionally want machine-wide package installs.
 
 ## Runtime flow
 

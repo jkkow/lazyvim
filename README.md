@@ -61,6 +61,13 @@ Run the installer from the repository root:
 powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All
 ```
 
+Installer scope examples:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All -Scope user
+powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All -MachineScope
+```
+
 Install a single tool separately (example: `fzf`):
 
 ```powershell
@@ -114,4 +121,6 @@ If your setup becomes unstable, removing `nvim-data` is usually safe; Neovim rec
 ## Installer Scope
 
 `install/` is Windows-first and based on PowerShell + winget.
+- Default package scope is `user`.
+- Use `-MachineScope` only when you explicitly need machine-wide installs.
 Legacy Ubuntu scripts are available in `install/legacy/ubuntu/`.

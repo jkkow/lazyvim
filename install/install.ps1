@@ -1,6 +1,8 @@
 param(
   [switch]$BaseOnly,
   [switch]$All,
+  [ValidateSet("user", "machine")][string]$Scope = "user",
+  [switch]$MachineScope,
   [switch]$Help
 )
 
@@ -12,10 +14,12 @@ $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if ($Help) {
   @"
-Usage: .\install\install.ps1 [-BaseOnly|-All] [-Help]
+Usage: .\install\install.ps1 [-BaseOnly|-All] [-Scope user|machine] [-MachineScope] [-Help]
 
 -BaseOnly  Install only required packages.
 -All       Install required and optional packages.
+-Scope     winget scope for package installs: user (default) or machine.
+-MachineScope Shortcut for -Scope machine.
 -Help      Show this help message.
 "@ | Write-Output
   exit 0
@@ -25,6 +29,14 @@ if ($BaseOnly -and $All) {
   Write-LogError "Use either -BaseOnly or -All, not both."
   exit 1
 }
+
+$effective_scope = $Scope
+if ($MachineScope) {
+  $effective_scope = "machine"
+}
+
+$env:NVIM_INSTALL_SCOPE = $effective_scope
+Write-LogInfo "Package installation scope: $effective_scope"
 
 if (-not $IsWindows) {
   Write-LogError "This installer supports Windows 11 only."

@@ -11,7 +11,7 @@ if (Test-CommandExists "python") {
   }
 }
 
-Install-WingetPackage -Id "Python.Python.3.12" -Scope "user"
+Install-WingetPackage -Id "Python.Python.3.12"
 
 if (-not (Test-CommandExists "python") -and -not (Test-WingetPackageInstalled -Id "Python.Python.3.12")) {
   throw "python installation could not be verified"
