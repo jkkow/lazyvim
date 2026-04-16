@@ -4,6 +4,7 @@ param(
   [ValidateSet("user", "machine")][string]$Scope = "machine",
   [switch]$MachineScope,
   [switch]$ElevatedRelaunch,
+  [string]$RelaunchReportPath = "",
   [switch]$Help
 )
 
@@ -14,6 +15,83 @@ $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "lib/common.ps1")
 . (Join-Path $script_dir "lib/version.ps1")
 . (Join-Path $script_dir "lib/version_requirements.ps1")
+
+function Write-RelaunchReport {
+  param(
+    [string]$Path,
+    [string]$Mode,
+    [string]$InstallError,
+    [object[]]$InstallerResults = @()
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Path)) {
+    return
+  }
+
+  $report_dir = Split-Path -Parent $Path
+  if (-not [string]::IsNullOrWhiteSpace($report_dir) -and -not (Test-Path -LiteralPath $report_dir)) {
+    $null = New-Item -ItemType Directory -Path $report_dir -Force
+  }
+
+  $report = [PSCustomObject]@{
+    Mode = $Mode
+    InstallError = $InstallError
+    InstallerResults = $InstallerResults
+  }
+
+  $json = $report | ConvertTo-Json -Depth 8
+  Set-Content -LiteralPath $Path -Value $json -Encoding UTF8
+}
+
+function Read-RelaunchReport {
+  param([string]$Path)
+
+  if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path)) {
+    return $null
+  }
+
+  $raw = Get-Content -LiteralPath $Path -Raw -ErrorAction SilentlyContinue
+  if ([string]::IsNullOrWhiteSpace($raw)) {
+    return $null
+  }
+
+  return $raw | ConvertFrom-Json
+}
+
+function Write-RelaunchSummaryReplay {
+  param([Parameter(Mandatory = $true)]$Report)
+
+  $mode = if ($Report.Mode) { [string]$Report.Mode } else { "unknown" }
+  $results = if ($null -ne $Report.InstallerResults) { @($Report.InstallerResults) } else { @() }
+  $install_error = if ($Report.InstallError) { [string]$Report.InstallError } else { "" }
+
+  Write-LogSection "INSTALLATION SUMMARY (REPLAY)"
+  Write-Output "Mode: $mode"
+
+  if (-not [string]::IsNullOrWhiteSpace($install_error)) {
+    Write-Output "Result: failed"
+    Write-Output "Reason: $install_error"
+  } else {
+    Write-Output "Result: success"
+  }
+
+  Write-Output ""
+  Write-Output "Installer execution results:"
+
+  if (-not $results -or $results.Count -eq 0) {
+    Write-Output "  (no installer scripts executed)"
+    return
+  }
+
+  foreach ($result in $results) {
+    $critical_tag = if ($result.Critical) { " critical" } else { "" }
+    $line = "  [{0}] {1,-8} {2}{3}" -f $result.Phase, $result.Status, $result.Entry, $critical_tag
+    Write-Output $line
+    if ($result.Message) {
+      Write-Output "    reason: $($result.Message)"
+    }
+  }
+}
 
 if ($Help) {
   @"
@@ -55,13 +133,20 @@ if ($effective_scope -eq "machine" -and -not (Test-IsProcessElevated)) {
     exit 1
   }
 
+  $report_path = if ([string]::IsNullOrWhiteSpace($RelaunchReportPath)) {
+    Join-Path $env:TEMP ("nvim-installer-report-{0}.json" -f ([guid]::NewGuid().ToString("N")) )
+  } else {
+    $RelaunchReportPath
+  }
+
   $ps_exe = if (Test-CommandExists "pwsh") { "pwsh" } else { "powershell" }
   $relaunch_args = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
     "-File", $MyInvocation.MyCommand.Path,
     "-Scope", $effective_scope,
-    "-ElevatedRelaunch"
+    "-ElevatedRelaunch",
+    "-RelaunchReportPath", $report_path
   )
 
   if ($BaseOnly) {
@@ -77,6 +162,26 @@ if ($effective_scope -eq "machine" -and -not (Test-IsProcessElevated)) {
   Write-LogInfo "Machine-scope install requires elevation. Relaunching installer with administrator rights."
   try {
     $elevated = Start-Process -FilePath $ps_exe -Verb RunAs -ArgumentList $relaunch_args -WorkingDirectory $PSScriptRoot -PassThru -Wait
+
+    $replayed = $false
+    try {
+      $report = Read-RelaunchReport -Path $report_path
+      if ($null -ne $report) {
+        Write-RelaunchSummaryReplay -Report $report
+        $replayed = $true
+      }
+    } catch {
+      Write-LogWarn "Failed to read relaunch installation summary: $($_.Exception.Message)"
+    } finally {
+      if (-not [string]::IsNullOrWhiteSpace($report_path) -and (Test-Path -LiteralPath $report_path)) {
+        Remove-Item -LiteralPath $report_path -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    if (-not $replayed) {
+      Write-LogWarn "Elevated installer finished, but summary replay data was unavailable."
+    }
+
     exit $elevated.ExitCode
   } catch {
     throw "Administrator elevation was canceled or failed."
@@ -352,6 +457,7 @@ try {
 }
 
 Write-InstallationSummary -Mode $mode -InstallerResults $script:INSTALLER_RESULTS
+Write-RelaunchReport -Path $RelaunchReportPath -Mode $mode -InstallError $install_error -InstallerResults $script:INSTALLER_RESULTS
 
 if ($install_error) {
   throw $install_error
