@@ -2,7 +2,35 @@ $ErrorActionPreference = "Stop"
 
 $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "../../lib/common.ps1")
+. (Join-Path $script_dir "../../lib/version.ps1")
 . (Join-Path $script_dir "../../lib/version_requirements.ps1")
+
+$NERD_FONT_NAME = "JetBrainsMono"
+$required_version = Get-MinRequiredVersion -Tool "nerd-font"
+if (-not $required_version) {
+  throw "Missing required version for nerd-font in install/min-required-versions.txt"
+}
+
+$version_state_dir = Join-Path $env:LOCALAPPDATA "nvim-installer"
+$version_state_file = Join-Path $version_state_dir "nerd-font-version.txt"
+
+function Get-InstalledNerdFontVersion {
+  if (Test-Path -LiteralPath $version_state_file) {
+    $value = (Get-Content -LiteralPath $version_state_file -ErrorAction SilentlyContinue | Select-Object -First 1)
+    if ($value) {
+      return $value.Trim()
+    }
+  }
+
+  return ""
+}
+
+function Set-InstalledNerdFontVersion {
+  param([Parameter(Mandatory = $true)][string]$Version)
+
+  New-Item -ItemType Directory -Path $version_state_dir -Force | Out-Null
+  Set-Content -LiteralPath $version_state_file -Value $Version -NoNewline
+}
 
 function Test-NerdFontInstalled {
   $font_dir = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
@@ -15,12 +43,13 @@ function Test-NerdFontInstalled {
   return $files.Count -gt 0
 }
 
-if (Test-NerdFontInstalled) {
-  Write-LogInfo "$NERD_FONT_NAME Nerd Font already installed"
+$installed_version = Get-InstalledNerdFontVersion
+if ((Test-NerdFontInstalled) -and $installed_version -and (Test-VersionGreaterOrEqual -Current $installed_version -Required $required_version)) {
+  Write-LogInfo "$NERD_FONT_NAME Nerd Font $installed_version already satisfies $required_version"
   exit 0
 }
 
-$font_version = $NERD_FONT_VERSION.TrimStart("v")
+$font_version = $required_version.TrimStart("v")
 $download_url = "https://github.com/ryanoasis/nerd-fonts/releases/download/v${font_version}/${NERD_FONT_NAME}.zip"
 
 $tmp_dir = Join-Path ([IO.Path]::GetTempPath()) ("nerd-font-" + [Guid]::NewGuid().ToString("N"))
@@ -51,6 +80,8 @@ try {
     $font_name = [IO.Path]::GetFileNameWithoutExtension($font_file.Name)
     New-ItemProperty -Path $registry_path -Name "$font_name (TrueType)" -Value $destination -PropertyType String -Force | Out-Null
   }
+
+  Set-InstalledNerdFontVersion -Version $font_version
 
   Write-LogInfo "$NERD_FONT_NAME Nerd Font installed for current user"
   Write-LogInfo "Set your terminal font to a Nerd Font variant, for example: JetBrainsMono Nerd Font"

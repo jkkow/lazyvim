@@ -11,6 +11,8 @@ $ErrorActionPreference = "Stop"
 $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 . (Join-Path $script_dir "lib/common.ps1")
+. (Join-Path $script_dir "lib/version.ps1")
+. (Join-Path $script_dir "lib/version_requirements.ps1")
 
 if ($Help) {
   @"
@@ -87,30 +89,113 @@ function Run-Manifest {
 function Write-InstallationSummary {
   param([Parameter(Mandatory = $true)][string]$Mode)
 
+  function Get-InstalledVersion {
+    param(
+      [string]$Command,
+      [string[]]$VersionArgs = @("--version"),
+      [string]$Pattern = "([0-9]+(?:\.[0-9]+){1,3})"
+    )
+
+    if (-not $Command -or -not (Test-CommandExists $Command)) {
+      return ""
+    }
+
+    $line = Get-FirstOutputLine -Command $Command -Arguments $VersionArgs
+    if ($line -and ($line -match $Pattern)) {
+      return $matches[1]
+    }
+
+    return ""
+  }
+
+  function Test-NerdFontInstalled {
+    $font_dir = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
+    if (-not (Test-Path -LiteralPath $font_dir)) {
+      return $false
+    }
+
+    $files = Get-ChildItem -Path $font_dir -Filter "JetBrainsMono`NerdFont-*.ttf" -ErrorAction SilentlyContinue
+    return $files.Count -gt 0
+  }
+
+  function Get-NerdFontInstalledVersion {
+    $version_file = Join-Path $env:LOCALAPPDATA "nvim-installer\nerd-font-version.txt"
+    if (Test-Path -LiteralPath $version_file) {
+      $value = Get-Content -LiteralPath $version_file -ErrorAction SilentlyContinue | Select-Object -First 1
+      if ($value) {
+        return $value.Trim()
+      }
+    }
+
+    if (Test-NerdFontInstalled) {
+      return "found"
+    }
+
+    return ""
+  }
+
   Write-LogSection "INSTALLATION SUMMARY"
   Write-Output "Mode: $Mode"
+  Write-Output ""
 
-  $tools = @(
-    @{ Name = "nvim"; Cmd = "nvim"; VersionArgs = @("--version"); Pattern = "NVIM v(.+)" },
-    @{ Name = "git"; Cmd = "git"; VersionArgs = @("--version"); Pattern = "git version (.+)" },
-    @{ Name = "lazygit"; Cmd = "lazygit"; VersionArgs = @("--version"); Pattern = "([0-9]+\.[0-9]+\.[0-9]+)" },
-    @{ Name = "fd"; Cmd = "fd"; VersionArgs = @("--version"); Pattern = "fd ([^\s]+)" },
-    @{ Name = "fzf"; Cmd = "fzf"; VersionArgs = @("--version"); Pattern = "([^\s]+)" },
-    @{ Name = "ripgrep"; Cmd = "rg"; VersionArgs = @("--version"); Pattern = "ripgrep ([^\s]+)" },
-    @{ Name = "python"; Cmd = "python"; VersionArgs = @("--version"); Pattern = "Python (.+)" }
-  )
+  $managed_tool_keys = @("fd", "fzf", "git", "lazygit", "neovim", "nerd-font", "nodejs", "python", "ripgrep")
+  $tool_specs = @{
+    "neovim" = @{ Name = "nvim"; Cmd = "nvim"; VersionArgs = @("--version"); Pattern = "NVIM v(.+)" }
+    "git" = @{ Name = "git"; Cmd = "git"; VersionArgs = @("--version"); Pattern = "git version (.+)" }
+    "lazygit" = @{ Name = "lazygit"; Cmd = "lazygit"; VersionArgs = @("--version"); Pattern = "([0-9]+\.[0-9]+\.[0-9]+)" }
+    "fd" = @{ Name = "fd"; Cmd = "fd"; VersionArgs = @("--version"); Pattern = "fd ([^\s]+)" }
+    "fzf" = @{ Name = "fzf"; Cmd = "fzf"; VersionArgs = @("--version"); Pattern = "([^\s]+)" }
+    "ripgrep" = @{ Name = "ripgrep"; Cmd = "rg"; VersionArgs = @("--version"); Pattern = "ripgrep ([^\s]+)" }
+    "python" = @{ Name = "python"; Cmd = "python"; VersionArgs = @("--version"); Pattern = "Python ([0-9]+(?:\.[0-9]+){1,3})" }
+    "nodejs" = @{ Name = "nodejs"; Cmd = "node"; VersionArgs = @("--version"); Pattern = "^v([0-9]+(?:\.[0-9]+){1,3})" }
+    "nerd-font" = @{ Name = "nerd-font" }
+  }
 
-  foreach ($tool in $tools) {
-    if (Test-CommandExists $tool.Cmd) {
-      $line = Get-FirstOutputLine -Command $tool.Cmd -Arguments $tool.VersionArgs
-      $version = "found"
-      if ($line -and ($line -match $tool.Pattern)) {
-        $version = $matches[1]
+  $requirements = Get-MinRequiredVersions
+  $all_keys = @($managed_tool_keys + $requirements.Keys) | Sort-Object -Unique
+
+  foreach ($tool_key in $all_keys) {
+    $required = Get-MinRequiredVersion -Tool $tool_key
+    $is_managed = $managed_tool_keys -contains $tool_key
+
+    $display_name = $tool_key
+    $installed = ""
+    if ($tool_specs.ContainsKey($tool_key)) {
+      $spec = $tool_specs[$tool_key]
+      $display_name = $spec.Name
+      if ($tool_key -eq "nerd-font") {
+        $installed = Get-NerdFontInstalledVersion
+      } else {
+        $installed = Get-InstalledVersion -Command $spec.Cmd -VersionArgs $spec.VersionArgs -Pattern $spec.Pattern
       }
-      Write-Output ("  {0,-10} {1}" -f $tool.Name, $version)
     } else {
-      Write-Output ("  {0,-10} not found" -f $tool.Name)
+      $display_name = $tool_key
+      $installed = Get-InstalledVersion -Command $tool_key
     }
+
+    $required_out = if ($required) { $required } else { "-" }
+    $installed_out = if ($installed) { $installed } else { "not found" }
+
+    $status = "not-managed"
+    if ($is_managed) {
+      if (-not $required) {
+        $status = "missing-required"
+      } elseif (-not $installed) {
+        $status = "not-found"
+      } else {
+        try {
+          if (Test-VersionGreaterOrEqual -Current $installed -Required $required) {
+            $status = "ok"
+          } else {
+            $status = "upgrade-needed"
+          }
+        } catch {
+          $status = "version-check-failed"
+        }
+      }
+    }
+
+    Write-Output ("  {0,-12} required: {1,-10} installed: {2,-12} status: {3}" -f $display_name, $required_out, $installed_out, $status)
   }
 }
 

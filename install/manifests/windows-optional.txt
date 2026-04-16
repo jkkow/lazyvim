@@ -1,3 +1,4 @@
 installers/winget/python.ps1
+installers/winget/nodejs.ps1
 installers/winget/lazygit.ps1
 installers/winget/nerd-font.ps1

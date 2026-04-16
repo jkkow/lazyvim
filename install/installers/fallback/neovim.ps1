@@ -5,7 +5,12 @@ $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "../../lib/version.ps1")
 . (Join-Path $script_dir "../../lib/version_requirements.ps1")
 
-$fallback_version = Normalize-Version $NEOVIM_FALLBACK_VERSION
+$required_version = Get-MinRequiredVersion -Tool "neovim"
+if (-not $required_version) {
+  throw "Missing required version for neovim in install/min-required-versions.txt"
+}
+
+$fallback_version = Normalize-Version $required_version
 $download_url = "https://github.com/neovim/neovim/releases/download/v${fallback_version}/nvim-win64.zip"
 
 $tmp_dir = Join-Path ([IO.Path]::GetTempPath()) ("nvim-fallback-" + [Guid]::NewGuid().ToString("N"))
@@ -49,8 +54,8 @@ try {
   }
 
   $installed = $matches[1]
-  if (-not (Test-VersionGreaterOrEqual -Current $installed -Required $NEOVIM_REQUIRED_VERSION)) {
-    throw "Installed nvim version $installed does not satisfy $NEOVIM_REQUIRED_VERSION"
+  if (-not (Test-VersionGreaterOrEqual -Current $installed -Required $required_version)) {
+    throw "Installed nvim version $installed does not satisfy $required_version"
   }
 
   Write-LogInfo "nvim installed via fallback ($installed)"

@@ -23,10 +23,11 @@ Optional:
 
 ```powershell
 winget install --id Python.Python.3.12 -e
+winget install --id OpenJS.NodeJS.LTS -e
 winget install --id JesseDuffield.lazygit -e
 ```
 
-When you run `install/install.ps1 -All`, the installer also adds Python, lazygit, and JetBrainsMono Nerd Font.
+When you run `install/install.ps1 -All`, the installer also adds Python, Node.js (LTS), lazygit, and JetBrainsMono Nerd Font.
 
 Notes:
 
@@ -61,6 +62,8 @@ Run the installer from the repository root:
 powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All
 ```
 
+`-ExecutionPolicy Bypass` in this command applies to that PowerShell process only. It does not permanently change your machine/user execution policy.
+
 Installer scope examples:
 
 ```powershell
@@ -85,6 +88,18 @@ Notes:
 - Run these commands from the repository root (or use absolute paths).
 - Running an individual installer script skips the top-level checks and summary from `install/install.ps1`.
 - The `fzf` script can fall back to `install/installers/fallback/fzf.ps1` if winget does not provide the required version.
+
+Manifests:
+
+- `install/manifests/windows-base.txt` defines required installer script paths.
+- `install/manifests/windows-optional.txt` defines optional installer script paths.
+- `install/install.ps1` runs each listed script sequentially in order.
+
+Minimum required versions:
+
+- `install/min-required-versions.txt` is the source of truth for minimum tool versions.
+- The installer compares installed versions against this file and installs/upgrades only when needed.
+- Tools listed there but not managed by installer scripts are shown as `not-managed` in the final summary.
 
 The installer links `%LOCALAPPDATA%\nvim` to `~/.config/nvim` automatically.
 For GUI Neovim clients (Neovide, nvim-qt), this repo sets `guifont` to `JetBrainsMono Nerd Font:h11`.

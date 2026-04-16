@@ -8,12 +8,13 @@ Ubuntu scripts were moved to `install/legacy/ubuntu/`.
 
 - Installs required tools from `install/manifests/windows-base.txt`.
 - Optionally installs extra tools from `install/manifests/windows-optional.txt`.
-- Optional tools currently include Python, lazygit, and JetBrainsMono Nerd Font.
+- Optional tools currently include Python, Node.js (LTS), lazygit, and JetBrainsMono Nerd Font.
+- Reads minimum required versions from `install/min-required-versions.txt`.
 - Uses `winget` installers in `install/installers/winget/`.
 - Uses fallback download installers from `install/installers/fallback/` when version checks fail.
 - Runs Neovim post steps in `install/post/neovim.ps1`.
 - Creates `%LOCALAPPDATA%\nvim` as a link to `~/.config/nvim`.
-- Installs JetBrainsMono Nerd Font in optional mode.
+- Uses `user` scope by default for winget installs (with explicit machine override).
 
 ## Usage
 
@@ -25,6 +26,8 @@ powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All
 powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All -Scope user
 powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All -MachineScope
 ```
+
+`-ExecutionPolicy Bypass` here is process-scoped for that command invocation.
 
 Flags:
 
@@ -48,11 +51,30 @@ Scope policy:
 3. `POST INSTALLATION`
 4. `INSTALLATION SUMMARY`
 
+For each managed tool, installers compare the currently installed version with the required version from
+`install/min-required-versions.txt`:
+
+- If not installed, install.
+- If installed but lower than required, install/upgrade.
+- If installed and meets required version, pass.
+
 Manifest entries are executed sequentially and shown as:
 
 ```text
 [INFO] [3/5] Running installers/winget/ripgrep.ps1
 ```
+
+Each manifest line is a repository-relative path to a script under `install/` (blank lines and `#` comments are ignored).
+
+## Running individual installer scripts
+
+You can run a single installer script directly (example: `fzf`):
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\install\installers\winget\fzf.ps1
+```
+
+This is useful for targeted retries, but it skips top-level orchestration behaviors from `install/install.ps1` (phase banners, manifest ordering, final summary).
 
 ## Directory structure
 
@@ -60,12 +82,14 @@ Manifest entries are executed sequentially and shown as:
 install/
   install.ps1
   INSTALLATION.md
+  min-required-versions.txt
   manifests/
     windows-base.txt
     windows-optional.txt
   installers/
     winget/
       lazygit.ps1
+      nodejs.ps1
       nerd-font.ps1
     fallback/
   post/
@@ -99,4 +123,5 @@ After package installation, `install/post/neovim.ps1`:
 
 - Run installer twice to confirm idempotency.
 - Confirm `%LOCALAPPDATA%\nvim` points to `~/.config/nvim`.
+- Confirm installation summary shows required vs installed versions and status for each tool.
 - Run `:checkhealth` inside Neovim.

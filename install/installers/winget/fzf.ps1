@@ -5,6 +5,11 @@ $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "../../lib/version.ps1")
 . (Join-Path $script_dir "../../lib/version_requirements.ps1")
 
+$required_version = Get-MinRequiredVersion -Tool "fzf"
+if (-not $required_version) {
+  throw "Missing required version for fzf in install/min-required-versions.txt"
+}
+
 function Get-FzfVersion {
   if (-not (Test-CommandExists "fzf")) {
     return ""
@@ -19,15 +24,15 @@ function Get-FzfVersion {
 }
 
 $current = Get-FzfVersion
-if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $FZF_REQUIRED_VERSION)) {
-  Write-LogInfo "fzf $current already satisfies $FZF_REQUIRED_VERSION"
+if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $required_version)) {
+  Write-LogInfo "fzf $current already satisfies $required_version"
   exit 0
 }
 
 Install-WingetPackage -Id "junegunn.fzf"
 
 $current = Get-FzfVersion
-if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $FZF_REQUIRED_VERSION)) {
+if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $required_version)) {
   Write-LogInfo "fzf installed via winget ($current)"
   exit 0
 }

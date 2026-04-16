@@ -5,6 +5,11 @@ $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "../../lib/version.ps1")
 . (Join-Path $script_dir "../../lib/version_requirements.ps1")
 
+$required_version = Get-MinRequiredVersion -Tool "neovim"
+if (-not $required_version) {
+  throw "Missing required version for neovim in install/min-required-versions.txt"
+}
+
 function Get-NvimVersion {
   if (-not (Test-CommandExists "nvim")) {
     return ""
@@ -19,15 +24,15 @@ function Get-NvimVersion {
 }
 
 $current = Get-NvimVersion
-if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $NEOVIM_REQUIRED_VERSION)) {
-  Write-LogInfo "nvim $current already satisfies $NEOVIM_REQUIRED_VERSION"
+if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $required_version)) {
+  Write-LogInfo "nvim $current already satisfies $required_version"
   exit 0
 }
 
 Install-WingetPackage -Id "Neovim.Neovim"
 
 $current = Get-NvimVersion
-if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $NEOVIM_REQUIRED_VERSION)) {
+if ($current -and (Test-VersionGreaterOrEqual -Current $current -Required $required_version)) {
   Write-LogInfo "nvim installed via winget ($current)"
   exit 0
 }

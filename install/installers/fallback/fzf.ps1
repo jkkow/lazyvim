@@ -5,7 +5,12 @@ $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script_dir "../../lib/version.ps1")
 . (Join-Path $script_dir "../../lib/version_requirements.ps1")
 
-$fallback_version = Normalize-Version $FZF_FALLBACK_VERSION
+$required_version = Get-MinRequiredVersion -Tool "fzf"
+if (-not $required_version) {
+  throw "Missing required version for fzf in install/min-required-versions.txt"
+}
+
+$fallback_version = Normalize-Version $required_version
 $download_url = "https://github.com/junegunn/fzf/releases/download/v${fallback_version}/fzf-${fallback_version}-windows_amd64.zip"
 
 $tmp_dir = Join-Path ([IO.Path]::GetTempPath()) ("fzf-fallback-" + [Guid]::NewGuid().ToString("N"))
@@ -38,8 +43,8 @@ try {
   }
 
   $installed = $matches[1]
-  if (-not (Test-VersionGreaterOrEqual -Current $installed -Required $FZF_REQUIRED_VERSION)) {
-    throw "Installed fzf version $installed does not satisfy $FZF_REQUIRED_VERSION"
+  if (-not (Test-VersionGreaterOrEqual -Current $installed -Required $required_version)) {
+    throw "Installed fzf version $installed does not satisfy $required_version"
   }
 
   Write-LogInfo "fzf installed via fallback ($installed)"
