@@ -41,7 +41,6 @@ local function resolve_python_tool(root_dir, name)
 end
 
 local function use_resolved_cmd(server_opts, command, args)
-  server_opts.mason = false
   server_opts.cmd = function(dispatchers, config)
     local cmd = vim.list_extend({ resolve_python_tool(config.root_dir, command) }, args)
     return vim.lsp.rpc.start(cmd, dispatchers, {
@@ -54,12 +53,19 @@ end
 
 return {
   {
+    "mason-org/mason.nvim",
+    opts = function(_, opts)
+      opts.ensure_installed = opts.ensure_installed or {}
+      vim.list_extend(opts.ensure_installed, { "basedpyright", "ruff" })
+    end,
+  },
+  {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
       opts.servers = opts.servers or {}
 
-      opts.servers.pyright = opts.servers.pyright or {}
-      use_resolved_cmd(opts.servers.pyright, "pyright-langserver", { "--stdio" })
+      opts.servers.basedpyright = opts.servers.basedpyright or {}
+      use_resolved_cmd(opts.servers.basedpyright, "basedpyright-langserver", { "--stdio" })
 
       opts.servers.ruff = opts.servers.ruff or {}
       use_resolved_cmd(opts.servers.ruff, "ruff", { "server" })

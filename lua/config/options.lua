@@ -2,6 +2,12 @@
 -- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
 -- Add any additional options here
 
+-- LazyVim's Python extra reads these globals while plugin specs are being built.
+-- Keep them here so the extra enables BasedPyright instead of its default Pyright
+-- before lua/plugins/python-lsp.lua applies the project-local command resolver.
+vim.g.lazyvim_python_lsp = "basedpyright"
+vim.g.lazyvim_python_ruff = "ruff"
+
 local opt = vim.opt
 
 ------------------------------------------------------------------------------
