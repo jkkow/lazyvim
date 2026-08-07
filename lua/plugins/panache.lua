@@ -84,6 +84,16 @@ return {
         local lspconfig = require("lspconfig")
         local configs = require("lspconfig.configs")
 
+        local on_attach = server_opts.on_attach
+        server_opts.on_attach = function(client, bufnr)
+          client.server_capabilities.documentFormattingProvider = false
+          client.server_capabilities.documentRangeFormattingProvider = false
+
+          if on_attach then
+            on_attach(client, bufnr)
+          end
+        end
+
         if not configs.panache then
           configs.panache = {
             default_config = {
