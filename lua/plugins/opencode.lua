@@ -14,10 +14,10 @@ return {
     vim.o.autoread = true
 
     -- Recommended/example keymaps
-    vim.keymap.set({ "n", "t" }, "<leader>ot", function()
+    vim.keymap.set({ "n", "t" }, "<leader>oo", function()
       require("opencode").toggle()
     end, { desc = "Toggle opencode" })
-    vim.keymap.set({ "n", "t" }, "<leader>oa", function()
+    vim.keymap.set({ "n", "t" }, "<leader>os", function()
       local ctx = string.format("@cursor %s:%d ⟼  ", vim.fn.expand("%"), vim.fn.line("."))
       require("opencode").ask(ctx)
     end, { desc = "Opencode ask this" })
