@@ -32,24 +32,29 @@ Back up an existing configuration before cloning.
 ### Windows
 
 ```powershell
-git clone https://github.com/jkkow/lazyvim.git "$env:LOCALAPPDATA\nvim"
+git clone git@github.com:jkkow/lazyvim.git "$env:LOCALAPPDATA\nvim"
 ```
 
-Install required and recommended tools with your preferred package manager. For winget:
+Install the required tools from an elevated PowerShell session. The Neovim (WiX MSI) and Git (Inno Setup) winget packages support machine-wide installation:
 
 ```powershell
-winget install --id Neovim.Neovim -e
-winget install --id Git.Git -e
-winget install --id BurntSushi.ripgrep.MSVC -e
-winget install --id sharkdp.fd -e
-winget install --id junegunn.fzf -e
-winget install --id Microsoft.PowerShell -e
+winget install --id Neovim.Neovim -e --scope machine
+winget install --id Git.Git -e --scope machine
+```
+
+Install recommended tools with your preferred package manager. For winget:
+
+```powershell
+winget install --id BurntSushi.ripgrep.MSVC -e --scope machine
+winget install --id sharkdp.fd -e --scope machine
+winget install --id junegunn.fzf -e --scope machine
+winget install --id Microsoft.PowerShell -e --scope machine
 ```
 
 ### Linux and WSL
 
 ```bash
-git clone https://github.com/jkkow/lazyvim.git ~/.config/nvim
+git clone git@github.com:jkkow/lazyvim.git ~/.config/nvim
 ```
 
 Install Neovim, Git, `ripgrep`, `fd`, and `fzf` with your distribution's package manager. Install `wl-clipboard` for Wayland or `xclip`/`xsel` for X11 clipboard support.
@@ -57,7 +62,7 @@ Install Neovim, Git, `ripgrep`, `fd`, and `fzf` with your distribution's package
 ### macOS
 
 ```bash
-git clone https://github.com/jkkow/lazyvim.git ~/.config/nvim
+git clone git@github.com:jkkow/lazyvim.git ~/.config/nvim
 ```
 
 Install Neovim, Git, `ripgrep`, `fd`, and `fzf` with your preferred package manager.
