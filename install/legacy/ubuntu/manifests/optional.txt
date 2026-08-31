@@ -1,5 +1,0 @@
-installers/apt/fonts-jetbrains-mono.sh
-installers/apt/python.sh
-installers/apt/python3-venv.sh
-installers/apt/xclip.sh
-installers/apt/xsel.sh

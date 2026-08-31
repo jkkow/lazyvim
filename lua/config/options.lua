@@ -9,10 +9,10 @@ vim.g.lazyvim_python_lsp = "basedpyright"
 vim.g.lazyvim_python_ruff = "ruff"
 
 local opt = vim.opt
+local platform = require("config.platform")
 
 ------------------------------------------------------------------------------
--- 1. Common Settings (Indentation & UI)
--- Baseline settings for Windows 11 Neovim usage
+-- Common Settings
 ------------------------------------------------------------------------------
 
 -- Indentation Setup
@@ -27,22 +27,36 @@ opt.breakindent = true -- Preserve indentation in wrapped text
 opt.scrolloff = 15 -- Keep minimal number of screen lines above and below the cursor
 
 ------------------------------------------------------------------------------
--- 2. Environment Specific Setup (Shell & Clipboard)
+-- Platform-specific shell and clipboard integration
 ------------------------------------------------------------------------------
 
--- Sync clipboard between Windows and Neovim
--- On Windows 11, Neovim uses the native clipboard provider
 opt.clipboard = "unnamedplus"
 
-------------------------------------------------------------------------------
--- 3. Display Settings (Wrap & Linebreak)
-------------------------------------------------------------------------------
-opt.wrap = true -- Wrap long lines
-opt.linebreak = true -- Wrap at word boundaries
+if platform.is_wsl then
+  opt.shell = "/bin/bash"
+  opt.shellcmdflag = "-c"
+  opt.shellredir = ">%s 2>&1"
+  opt.shellpipe = "2>%1 | tee"
+  opt.shellquote = ""
+  opt.shellxquote = ""
 
--- GUI font for Windows Neovim clients (Neovide, nvim-qt, etc.)
-if vim.fn.has("win32") == 1 then
+  if vim.fn.executable("clip.exe") == 1 and vim.fn.executable("powershell.exe") == 1 then
+    vim.g.clipboard = {
+      name = "WslClipboard",
+      copy = {
+        ["+"] = "clip.exe",
+        ["*"] = "clip.exe",
+      },
+      paste = {
+        ["+"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+        ["*"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+      },
+      cache_enabled = 0,
+    }
+  end
+elseif platform.is_windows then
   opt.guifont = "JetBrainsMono Nerd Font:h11"
+
   if vim.fn.executable("pwsh") == 1 then
     opt.shell = "pwsh"
 
@@ -59,3 +73,9 @@ if vim.fn.has("win32") == 1 then
     opt.shellxquote = ""
   end
 end
+
+------------------------------------------------------------------------------
+-- Display Settings
+------------------------------------------------------------------------------
+opt.wrap = true -- Wrap long lines
+opt.linebreak = true -- Wrap at word boundaries

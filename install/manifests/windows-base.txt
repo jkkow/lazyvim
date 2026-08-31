@@ -1,6 +1,0 @@
-installers/winget/gsudo.ps1
-installers/winget/neovim.ps1
-installers/winget/git.ps1
-installers/winget/ripgrep.ps1
-installers/winget/fd.ps1
-installers/winget/fzf.ps1

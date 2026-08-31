@@ -1,9 +1,0 @@
-installers/apt/build-essential.sh
-installers/apt/curl.sh
-installers/apt/fd.sh
-installers/apt/fzf.sh
-installers/apt/git.sh
-installers/apt/neovim.sh
-installers/apt/ripgrep.sh
-installers/apt/unzip.sh
-installers/apt/wl-clipboard.sh

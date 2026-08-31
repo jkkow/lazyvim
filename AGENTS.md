@@ -1,7 +1,7 @@
 # AGENTS Guide for `~/.config/nvim`
 
-This repository is a Windows-first Neovim config based on LazyVim.
-Most code is Lua under `lua/`; installer automation is PowerShell under `install/`.
+This repository is a cross-platform Neovim config based on LazyVim.
+Most code is Lua under `lua/`.
 
 Use this file as the default operating guide for coding agents.
 
@@ -9,12 +9,9 @@ Use this file as the default operating guide for coding agents.
 
 ## 1) Repository Map (What Lives Where)
 
-- `lua/config/`: base user config (`options.lua`, `keymaps.lua`, `autocmds.lua`, `lazy.lua`)
+- `lua/config/`: base user config (`options.lua`, `platform.lua`, `keymaps.lua`, `autocmds.lua`, `lazy.lua`)
 - `lua/plugins/`: plugin specs and plugin overrides
 - `lua/after/ftplugin/`: filetype-local behavior
-- `install/`: Windows installer orchestration and tool installers
-- `install/lib/`: shared PowerShell helpers
-- `install/manifests/`: ordered installer script lists
 - `stylua.toml`: canonical Lua formatting settings
 
 Do not edit LazyVim upstream internals directly; prefer user overrides in `lua/config/` and `lua/plugins/`.
@@ -61,19 +58,12 @@ If tests are added later (Plenary/Busted style), use:
 
 Only run these when the referenced test files exist.
 
-### 2.4 Installer Validation (PowerShell)
+### 2.4 Cross-platform Git policy
 
-- Installer help/sanity:
-  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install.ps1 -Help`
-- Full install run (base + optional):
-  - `powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -All`
-- Base only:
-  - `powershell -ExecutionPolicy Bypass -File .\install\install.ps1 -BaseOnly`
-- Parse-check all `.ps1` scripts under `install/`:
-  - `powershell -NoProfile -Command "$files = Get-ChildItem -Path install -Filter *.ps1 -Recurse; foreach ($f in $files) { $null = $tokens = $errors = $null; [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$tokens, [ref]$errors) > $null; if ($errors.Count) { $errors | ForEach-Object { Write-Error \"$($f.FullName): $($_.Message)\" } } }"`
-
-Optional if available:
-- `Invoke-ScriptAnalyzer -Path install -Recurse`
+- Validate line endings and whitespace:
+  - `git ls-files --eol`
+  - `git diff --check`
+  - `git diff --cached --check`
 
 ---
 
@@ -127,30 +117,17 @@ Optional if available:
 
 ---
 
-## 4) PowerShell Style Rules (`install/`)
-
-- Keep `$ErrorActionPreference = "Stop"` in scripts.
-- Use `param(...)` blocks for script inputs.
-- Reuse shared helpers from `install/lib/common.ps1` and version helpers.
-- Preserve idempotency: detect first, then install/upgrade only if needed.
-- Keep one concern per installer script where practical.
-- Keep minimum versions centralized in `install/min-required-versions.txt`.
-- Preserve installer output conventions (`Write-LogInfo`, `Write-LogWarn`, etc.).
-- If flow/status semantics change, update `install/INSTALLATION.md` accordingly.
-
----
-
-## 5) Agent Workflow Expectations
+## 4) Agent Workflow Expectations
 
 - Read nearby files before editing; follow established local patterns.
 - Prefer small, surgical changes over broad rewrites.
 - Do not introduce unrelated refactors in the same patch.
 - Validate changed files with relevant commands from Section 2.
-- Keep Windows paths and behavior first-class for installer code.
+- Keep platform-specific behavior isolated behind `lua/config/platform.lua`.
 
 ---
 
-## 6) Cursor / Copilot Rules
+## 5) Cursor / Copilot Rules
 
 Checked in this repository:
 - `.cursor/rules/`: not present
