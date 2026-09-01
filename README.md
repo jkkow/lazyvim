@@ -9,8 +9,9 @@ Personal [LazyVim](https://github.com/LazyVim/LazyVim) configuration with a cons
 - Neovim 0.11.7 or later
 - Git 2.30.0 or later
 - Network access to GitHub for the first `lazy.nvim` and plugin bootstrap
+- Windows: WinLibs (`BrechtSanders.WinLibs.POSIX.UCRT`) before starting Neovim; it provides GCC, GNU Make, CMake, Ninja, and GDB for native plugin builds
 - This repository at Neovim's configuration path:
-  - Windows: `%LOCALAPPDATA%\nvim`
+  - Windows with XDG configured: `%USERPROFILE%\.config\nvim`
   - Linux, WSL, and macOS: `~/.config/nvim`
 
 ### Recommended
@@ -31,24 +32,42 @@ Back up an existing configuration before cloning.
 
 ### Windows
 
+Configure the XDG base directories so Neovim uses `%USERPROFILE%\.config` for configuration. Log off and back on, or restart Windows, before opening Neovim.
+
 ```powershell
-git clone git@github.com:jkkow/lazyvim.git "$env:LOCALAPPDATA\nvim"
+[System.Environment]::SetEnvironmentVariable('XDG_CONFIG_HOME', "$env:USERPROFILE\.config", 'User')
+[System.Environment]::SetEnvironmentVariable('XDG_DATA_HOME', "$env:USERPROFILE\.local\share", 'User')
+[System.Environment]::SetEnvironmentVariable('XDG_CACHE_HOME', "$env:USERPROFILE\.cache", 'User')
 ```
 
-Install the required tools from an elevated PowerShell session. The Neovim (WiX MSI) and Git (Inno Setup) winget packages support machine-wide installation:
+Clone this repository directly into the XDG configuration directory:
+
+```powershell
+git clone git@github.com:jkkow/lazyvim.git "$env:USERPROFILE\.config\nvim"
+```
+
+> [!IMPORTANT]
+> Do not use `~` in the clone destination on Windows. Use `$env:USERPROFILE` so PowerShell passes the intended absolute path to Git.
+
+Before starting Neovim, install WinLibs from the PowerShell session of each account that uses Neovim. This required portable package supplies GCC, GNU Make, CMake, Ninja, and GDB for plugins with native builds:
+
+```powershell
+winget install --id BrechtSanders.WinLibs.POSIX.UCRT --exact
+```
+
+Install Neovim and Git from an elevated PowerShell session. The Neovim (WiX MSI) and Git (Inno Setup) winget packages support machine-wide installation:
 
 ```powershell
 winget install --id Neovim.Neovim -e --scope machine
 winget install --id Git.Git -e --scope machine
 ```
 
-Install recommended tools with your preferred package manager. For winget:
+Install `ripgrep`, `fd`, and `fzf` from the PowerShell session of each account that uses Neovim; these portable packages register their command shims in the installing account's user PATH.
 
 ```powershell
-winget install --id BurntSushi.ripgrep.MSVC -e --scope machine
-winget install --id sharkdp.fd -e --scope machine
-winget install --id junegunn.fzf -e --scope machine
-winget install --id Microsoft.PowerShell -e --scope machine
+winget install --id BurntSushi.ripgrep.MSVC -e
+winget install --id sharkdp.fd -e
+winget install --id junegunn.fzf -e
 ```
 
 ### Linux and WSL
