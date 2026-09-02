@@ -9,15 +9,15 @@ map("n", "<C-a>", "gg<S-v>G", { desc = "Select all" })
 map("n", "x", '"_x') -- don't yank with x
 map("t", "lk", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 map("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-map("n", "<leader>ft", function()
+map("n", "<leader>tt", function()
   vim.api.nvim_set_hl(0, "SnacksTerminalBorder", { fg = "#89b4fa", bold = true })
   Snacks.terminal(nil, {
     cwd = LazyVim.root(),
     win = {
       position = "float",
-      width = 0.65,
-      height = 0.45,
-      border = "double",
+      width = 80,
+      height = 15,
+      border = "rounded",
       wo = {
         winhighlight = "FloatBorder:SnacksTerminalBorder,NormalFloat:NormalFloat",
       },
