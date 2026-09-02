@@ -23,7 +23,7 @@ return {
       },
     }
 
-    vim.keymap.set({ "n", "t" }, "<leader>oo", function()
+    vim.keymap.set({ "n", "t" }, "<leader>oi", function()
       require("snacks.terminal").toggle(opencode_cmd, terminal_opts)
     end, { desc = "Toggle opencode" })
     vim.keymap.set({ "n", "t" }, "<leader>os", function()
