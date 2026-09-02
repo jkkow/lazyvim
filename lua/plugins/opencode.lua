@@ -6,16 +6,25 @@ return {
     { "folke/snacks.nvim", opts = { input = { enabled = true } } },
   },
   config = function()
-    vim.g.opencode_opts = {
-      -- Your configuration, if any; goto definition on the type or field for details
+    local opencode_cmd = "opencode --port"
+    local terminal_opts = {
+      win = {
+        position = "right",
+        enter = false,
+      },
     }
 
-    -- Required for `opts.events.reload`
-    vim.o.autoread = true
+    vim.g.opencode_opts = {
+      -- Your configuration, if any; goto definition on the type or field for details
+      server = {
+        start = function()
+          require("snacks.terminal").open(opencode_cmd, terminal_opts)
+        end,
+      },
+    }
 
-    -- Recommended/example keymaps
     vim.keymap.set({ "n", "t" }, "<leader>oo", function()
-      require("opencode").toggle()
+      require("snacks.terminal").toggle(opencode_cmd, terminal_opts)
     end, { desc = "Toggle opencode" })
     vim.keymap.set({ "n", "t" }, "<leader>os", function()
       local ctx = string.format("@cursor %s:%d ⟼  ", vim.fn.expand("%"), vim.fn.line("."))

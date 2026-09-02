@@ -26,6 +26,10 @@ Personal [LazyVim](https://github.com/LazyVim/LazyVim) configuration with a cons
 - Python 3.12+ and Node.js 20.11.1+ for the configured Python tools (`basedpyright` and `ruff`)
 - The `opencode` CLI for OpenCode plugin commands
 
+### OpenCode Toggle Compatibility
+
+`<leader>oo` toggles an `opencode --port` terminal through `snacks.terminal`. Although `snacks.nvim` supports Neovim 0.9.4+, this configuration requires Neovim 0.11.7+ because of LazyVim and other current dependencies. Do not downgrade only the OpenCode or Snacks integration to use an older Neovim; pin compatible versions of the full plugin stack instead.
+
 ## Installation
 
 Back up an existing configuration before cloning.
