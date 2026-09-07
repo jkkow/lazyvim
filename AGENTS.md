@@ -60,6 +60,11 @@ Only run these when the referenced test files exist.
 
 ### 2.4 Cross-platform Git policy
 
+- Before making any changes, verify the current branch is not behind its `origin` upstream:
+  - `git fetch origin`
+  - `git rev-list --left-right --count 'HEAD...@{upstream}'`
+  - Proceed only when the second count (commits behind) is `0`.
+  - If the branch is behind, tell the user and stop. Do not pull, merge, or rebase without explicit approval.
 - Validate line endings and whitespace:
   - `git ls-files --eol`
   - `git diff --check`
