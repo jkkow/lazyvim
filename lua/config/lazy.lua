@@ -35,6 +35,11 @@ require("lazy").setup({
     enabled = true, -- check for plugin updates periodically
     notify = false, -- notify on update
   }, -- automatically check for plugin updates
+  ui = {
+    -- Draw a single-line frame around lazy.nvim's own UI windows. This affects
+    -- :Lazy and LazyVim's :LazyExtras selector, but not unrelated float windows.
+    border = "single",
+  },
   performance = {
     rtp = {
       -- disable some rtp plugins
